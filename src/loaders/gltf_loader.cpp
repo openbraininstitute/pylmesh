@@ -7,6 +7,11 @@
 #include "tiny_gltf.h"
 #endif
 
+#ifdef PYLMESH_USE_DRACO
+#include "draco/compression/decode.h"
+#include "draco/mesh/mesh.h"
+#endif
+
 namespace pylmesh {
 
 bool GLTFLoader::canLoad(const std::string& filepath) const {
@@ -38,6 +43,58 @@ bool GLTFLoader::load(const std::string& filepath, Mesh& mesh) {
                 if (primitive.mode != TINYGLTF_MODE_TRIANGLES) continue;
 
                 size_t vertexOffset = mesh.vertices.size();
+
+#ifdef PYLMESH_USE_DRACO
+                // Check for Draco compression
+                if (primitive.extensions.count("KHR_draco_mesh_compression")) {
+                    const auto& ext = primitive.extensions.at("KHR_draco_mesh_compression");
+                    int bufferViewIdx = ext.Get("bufferView").GetNumberAsInt();
+                    
+                    if (bufferViewIdx >= 0 && bufferViewIdx < model.bufferViews.size()) {
+                        const auto& bufferView = model.bufferViews[bufferViewIdx];
+                        if (bufferView.buffer >= 0 && bufferView.buffer < model.buffers.size()) {
+                            const auto& buffer = model.buffers[bufferView.buffer];
+                            const uint8_t* data = &buffer.data[bufferView.byteOffset];
+                            
+                            draco::DecoderBuffer decBuffer;
+                            decBuffer.Init(reinterpret_cast<const char*>(data), bufferView.byteLength);
+                            
+                            draco::Decoder decoder;
+                            auto statusor = decoder.DecodeMeshFromBuffer(&decBuffer);
+                            
+                            if (statusor.ok()) {
+                                std::unique_ptr<draco::Mesh> dracoMesh = std::move(statusor).value();
+                                
+                                // Extract positions
+                                const draco::PointAttribute* posAttr = dracoMesh->GetNamedAttribute(draco::GeometryAttribute::POSITION);
+                                if (posAttr) {
+                                    for (draco::PointIndex i(0); i < dracoMesh->num_points(); ++i) {
+                                        float pos[3];
+                                        posAttr->GetValue(posAttr->mapped_index(i), pos);
+                                        Vertex v;
+                                        v.x = pos[0];
+                                        v.y = pos[1];
+                                        v.z = pos[2];
+                                        mesh.vertices.push_back(v);
+                                    }
+                                }
+                                
+                                // Extract indices
+                                for (draco::FaceIndex i(0); i < dracoMesh->num_faces(); ++i) {
+                                    const draco::Mesh::Face& face = dracoMesh->face(i);
+                                    Face f;
+                                    f.indices.push_back(vertexOffset + face[0].value());
+                                    f.indices.push_back(vertexOffset + face[1].value());
+                                    f.indices.push_back(vertexOffset + face[2].value());
+                                    mesh.faces.push_back(f);
+                                }
+                                
+                                continue;
+                            }
+                        }
+                    }
+                }
+#endif
 
                 // Load positions
                 auto posIt = primitive.attributes.find("POSITION");

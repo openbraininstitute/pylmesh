@@ -5,14 +5,34 @@ Jupyter notebooks demonstrating pylmesh usage.
 ## Available Notebooks
 
 ### obj_to_glb.ipynb
-Convert OBJ mesh files to GLB (binary GLTF) format.
+Convert OBJ mesh files to GLB (binary GLTF) format with Draco compression.
 
 **Features:**
 - Load OBJ files
 - Inspect mesh data (vertices, faces)
-- Export to GLB format
+- Export to GLB format with Draco compression
 - Batch conversion of multiple files
 - Export to other formats (STL, PLY, OFF, GLTF)
+
+### glb_to_obj.ipynb
+Convert GLB (binary GLTF) files to OBJ format with Draco decompression.
+
+**Features:**
+- Load GLB files (with Draco decompression)
+- Detect Draco compression
+- Inspect mesh data
+- Export to OBJ format
+- Batch conversion
+- File size comparison
+
+### mesh_conversion.ipynb
+General mesh format conversion with error handling.
+
+**Features:**
+- Load any supported format
+- Convert between formats
+- Error handling and diagnostics
+- Create test meshes
 
 ## Usage
 
