@@ -53,6 +53,10 @@ mesh.vertex_count()  # Returns number of vertices
 mesh.face_count()    # Returns number of faces
 mesh.is_empty()      # Returns True if mesh has no vertices
 mesh.clear()         # Clears all mesh data
+
+# Get data as numpy arrays
+mesh.get_vertices_array()  # Returns flat list [x1,y1,z1,x2,y2,z2,...]
+mesh.get_faces_array()     # Returns flat list [i1,i2,i3,i4,i5,i6,...]
 ```
 
 ### Data Structures
@@ -115,6 +119,24 @@ pylmesh.save_mesh("triangle.off", mesh)
 loaded = pylmesh.load_mesh("triangle.obj")
 print(f"Vertices: {loaded.vertex_count()}")
 print(f"Faces: {loaded.face_count()}")
+```
+
+### Convert to Trimesh
+
+```python
+import pylmesh
+import numpy as np
+
+# Load mesh
+mesh = pylmesh.load_mesh("model.glb")
+
+# Get as numpy arrays
+vertices = np.array(mesh.get_vertices_array()).reshape(-1, 3)
+faces = np.array(mesh.get_faces_array()).reshape(-1, 3)
+
+# Or convert directly to trimesh
+tm = pylmesh.to_trimesh(mesh)
+print(f"Trimesh: {len(tm.vertices)}v, {len(tm.faces)}f")
 ```
 
 ## C++ API

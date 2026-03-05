@@ -96,6 +96,25 @@ pip install .
 
 ## Runtime Dependencies
 
+### Python Package
+
+**Required:**
+- **numpy** (>=1.19.0) - Array operations and data conversion
+
+**Optional:**
+- **trimesh** (>=3.9.0) - For `to_trimesh()` conversion function
+- **plotly** (>=5.0.0) - For interactive notebook visualization
+- **jupyter** (>=1.0.0) - For running notebooks
+- **matplotlib** (>=3.3.0) - For static plots in notebooks
+
+Install optional dependencies:
+```bash
+pip install pylmesh[trimesh]  # For trimesh support
+pip install pylmesh[dev]      # For development tools
+```
+
+### C++ Library
+
 **None!** All dependencies are header-only and compiled into the library.
 
 ## License Compatibility

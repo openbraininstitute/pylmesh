@@ -25,6 +25,18 @@ Convert GLB (binary GLTF) files to OBJ format with Draco decompression.
 - Batch conversion
 - File size comparison
 
+### visualize_glb.ipynb
+Visualize GLB mesh files interactively.
+
+**Features:**
+- Load GLB files with Draco decompression
+- Convert to trimesh
+- Interactive 3D visualization with `.show()`
+- Static matplotlib plots (multiple views)
+- Mesh statistics (volume, area, watertight, etc.)
+- Export rendered images
+- Compare multiple meshes
+
 ### mesh_conversion.ipynb
 General mesh format conversion with error handling.
 

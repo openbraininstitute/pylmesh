@@ -24,7 +24,19 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: C++",
 ]
-keywords = ["mesh", "3d", "obj", "stl", "ply", "off", "gltf", "glb", "loader"]
+keywords = ["mesh", "3d", "obj", "stl", "ply", "off", "gltf", "glb", "loader", "draco"]
+dependencies = [
+    "numpy>=1.19.0",
+]
+
+[project.optional-dependencies]
+trimesh = ["trimesh>=3.9.0"]
+dev = [
+    "pytest>=6.0",
+    "jupyter>=1.0.0",
+    "matplotlib>=3.3.0",
+    "plotly>=5.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/yourusername/pylmesh"

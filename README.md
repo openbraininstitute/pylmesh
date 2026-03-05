@@ -46,6 +46,16 @@ if (pylmesh::MeshLoaderFactory::loadMesh("model.obj", mesh)) {
 pip install .
 ```
 
+With trimesh support:
+```bash
+pip install .[trimesh]
+```
+
+With development tools:
+```bash
+pip install .[dev]
+```
+
 Dependencies are automatically downloaded during build. No manual setup required!
 
 ### C++ Library
@@ -55,7 +65,7 @@ cmake ..
 make
 ```
 
-All dependencies (tinygltf, nlohmann/json, stb) are automatically downloaded.
+All dependencies (tinygltf, nlohmann/json, stb, draco) are automatically downloaded.
 
 ## Architecture
 - `include/pylmesh/` - Public headers

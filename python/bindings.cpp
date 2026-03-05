@@ -39,7 +39,9 @@ PYBIND11_MODULE(_pylmesh, m) {
         .def("clear", &pylmesh::Mesh::clear)
         .def("is_empty", &pylmesh::Mesh::isEmpty)
         .def("vertex_count", &pylmesh::Mesh::vertexCount)
-        .def("face_count", &pylmesh::Mesh::faceCount);
+        .def("face_count", &pylmesh::Mesh::faceCount)
+        .def("get_vertices_array", &pylmesh::Mesh::getVerticesArray)
+        .def("get_faces_array", &pylmesh::Mesh::getFacesArray);
 
     m.def("load_mesh", [](const std::string& filepath) {
         pylmesh::Mesh mesh;

@@ -24,9 +24,24 @@ These are automatically downloaded during CMake configuration.
 
 ### Python Package
 
-#### Quick Install
+#### Basic Installation
 ```bash
 pip install .
+```
+
+#### With Trimesh Support
+```bash
+pip install .[trimesh]
+```
+
+#### With Development Tools
+```bash
+pip install .[dev]
+```
+
+#### Install All Optional Dependencies
+```bash
+pip install .[trimesh,dev]
 ```
 
 #### Install Build Dependencies First
@@ -38,6 +53,11 @@ pip install .
 #### Build Without GLTF Support
 ```bash
 pip install . --config-settings=cmake.args="-DENABLE_GLTF=OFF"
+```
+
+#### Build Without Draco Compression
+```bash
+pip install . --config-settings=cmake.args="-DENABLE_DRACO=OFF"
 ```
 
 ### C++ Library
