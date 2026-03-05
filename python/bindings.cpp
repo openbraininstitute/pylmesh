@@ -2,6 +2,7 @@
 #include <pybind11/stl.h>
 #include "pylmesh/mesh.h"
 #include "pylmesh/loader.h"
+#include "pylmesh/exporter.h"
 
 namespace py = pybind11;
 
@@ -46,5 +47,12 @@ PYBIND11_MODULE(_pylmesh, m) {
             return mesh;
         }
         throw std::runtime_error("Failed to load mesh: " + filepath);
-    }, py::arg("filepath"), "Load a mesh from file");
+    }, py::arg("filepath"), "Load a mesh from file (supports .obj, .stl, .ply, .off, .gltf, .glb)");
+
+    m.def("save_mesh", [](const std::string& filepath, const pylmesh::Mesh& mesh) {
+        if (pylmesh::MeshExporterFactory::saveMesh(filepath, mesh)) {
+            return true;
+        }
+        throw std::runtime_error("Failed to save mesh: " + filepath);
+    }, py::arg("filepath"), py::arg("mesh"), "Save a mesh to file (supports .obj, .stl, .ply, .off)");
 }

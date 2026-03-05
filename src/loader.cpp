@@ -2,6 +2,8 @@
 #include "pylmesh/loaders/obj_loader.h"
 #include "pylmesh/loaders/stl_loader.h"
 #include "pylmesh/loaders/ply_loader.h"
+#include "pylmesh/loaders/off_loader.h"
+#include "pylmesh/loaders/gltf_loader.h"
 
 namespace pylmesh {
 
@@ -14,6 +16,12 @@ std::unique_ptr<MeshLoader> MeshLoaderFactory::createLoader(const std::string& f
     }
     if (PLYLoader().canLoad(filepath)) {
         return std::make_unique<PLYLoader>();
+    }
+    if (OFFLoader().canLoad(filepath)) {
+        return std::make_unique<OFFLoader>();
+    }
+    if (GLTFLoader().canLoad(filepath)) {
+        return std::make_unique<GLTFLoader>();
     }
     return nullptr;
 }
