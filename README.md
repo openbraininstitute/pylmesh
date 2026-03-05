@@ -8,7 +8,7 @@ A lightweight C++ library for loading 3D mesh files in multiple formats.
 - PLY (ASCII) - Import/Export
 - OFF (Object File Format) - Import/Export
 - GLTF - Import/Export
-- GLB - Import/Export
+- GLB - Import/Export (with Draco compression)
 
 
 

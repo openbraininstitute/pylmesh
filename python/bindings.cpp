@@ -46,7 +46,7 @@ PYBIND11_MODULE(_pylmesh, m) {
         if (pylmesh::MeshLoaderFactory::loadMesh(filepath, mesh)) {
             return mesh;
         }
-        throw std::runtime_error("Failed to load mesh: " + filepath);
+        throw std::runtime_error("Failed to load mesh: " + filepath + ". Check if file exists and format is supported.");
     }, py::arg("filepath"), "Load a mesh from file (supports .obj, .stl, .ply, .off, .gltf, .glb)");
 
     m.def("save_mesh", [](const std::string& filepath, const pylmesh::Mesh& mesh) {

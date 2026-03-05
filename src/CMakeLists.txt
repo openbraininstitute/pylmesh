@@ -22,6 +22,16 @@ set_target_properties(pylmesh PROPERTIES POSITION_INDEPENDENT_CODE ON)
 if(EXISTS "${CMAKE_SOURCE_DIR}/include/pylmesh/external/tiny_gltf.h")
     target_compile_definitions(pylmesh PRIVATE PYLMESH_USE_TINYGLTF)
     target_include_directories(pylmesh PRIVATE ${CMAKE_SOURCE_DIR}/include/pylmesh/external)
+    
+    # Link Draco if available
+    if(PYLMESH_USE_DRACO)
+        target_compile_definitions(pylmesh PRIVATE PYLMESH_USE_DRACO)
+        if(TARGET draco)
+            target_link_libraries(pylmesh PRIVATE draco)
+        elseif(TARGET draco::draco)
+            target_link_libraries(pylmesh PRIVATE draco::draco)
+        endif()
+    endif()
 endif()
 
 target_include_directories(pylmesh

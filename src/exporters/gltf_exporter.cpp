@@ -7,6 +7,11 @@
 #include "tiny_gltf.h"
 #endif
 
+#ifdef PYLMESH_USE_DRACO
+#include "draco/compression/encode.h"
+#include "draco/mesh/mesh.h"
+#endif
+
 namespace pylmesh {
 
 bool GLTFExporter::canSave(const std::string& filepath) const {
@@ -120,7 +125,121 @@ bool GLBExporter::canSave(const std::string& filepath) const {
 }
 
 bool GLBExporter::save(const std::string& filepath, const Mesh& mesh) {
-#ifdef PYLMESH_USE_TINYGLTF
+#if defined(PYLMESH_USE_TINYGLTF) && defined(PYLMESH_USE_DRACO)
+    // Use Draco compression
+    tinygltf::Model model;
+    tinygltf::Scene scene;
+    tinygltf::Mesh gltfMesh;
+    tinygltf::Primitive primitive;
+
+    // Create Draco mesh
+    draco::Mesh dracoMesh;
+    dracoMesh.set_num_points(mesh.vertices.size());
+    dracoMesh.SetNumFaces(mesh.faces.size());
+
+    // Add position attribute
+    draco::GeometryAttribute posAttr;
+    posAttr.Init(draco::GeometryAttribute::POSITION, nullptr, 3,
+                 draco::DT_FLOAT32, false, sizeof(float) * 3, 0);
+    int posAttId = dracoMesh.AddAttribute(posAttr, true, mesh.vertices.size());
+
+    float pMin[3] = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
+    float pMax[3] = {-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
+
+    // Set vertex positions
+    for (size_t i = 0; i < mesh.vertices.size(); ++i) {
+        float pos[3] = {mesh.vertices[i].x, mesh.vertices[i].y, mesh.vertices[i].z};
+        dracoMesh.attribute(posAttId)->SetAttributeValue(
+            draco::AttributeValueIndex(i), pos);
+        pMin[0] = std::min(pMin[0], pos[0]);
+        pMin[1] = std::min(pMin[1], pos[1]);
+        pMin[2] = std::min(pMin[2], pos[2]);
+        pMax[0] = std::max(pMax[0], pos[0]);
+        pMax[1] = std::max(pMax[1], pos[1]);
+        pMax[2] = std::max(pMax[2], pos[2]);
+    }
+
+    // Set faces
+    for (size_t i = 0; i < mesh.faces.size(); ++i) {
+        if (mesh.faces[i].indices.size() >= 3) {
+            draco::Mesh::Face face;
+            face[0] = mesh.faces[i].indices[0];
+            face[1] = mesh.faces[i].indices[1];
+            face[2] = mesh.faces[i].indices[2];
+            dracoMesh.SetFace(draco::FaceIndex(i), face);
+        }
+    }
+
+    // Encode with Draco
+    draco::Encoder encoder;
+    encoder.SetSpeedOptions(5, 5);
+    encoder.SetAttributeQuantization(draco::GeometryAttribute::POSITION, 14);
+
+    draco::EncoderBuffer encBuffer;
+    if (!encoder.EncodeMeshToBuffer(dracoMesh, &encBuffer).ok()) {
+        return false;
+    }
+
+    // Create buffer with Draco data
+    tinygltf::Buffer buffer;
+    buffer.data.assign(encBuffer.data(), encBuffer.data() + encBuffer.size());
+
+    tinygltf::BufferView bufferView;
+    bufferView.buffer = 0;
+    bufferView.byteOffset = 0;
+    bufferView.byteLength = buffer.data.size();
+
+    tinygltf::Accessor posAccessor;
+    posAccessor.bufferView = 0;
+    posAccessor.byteOffset = 0;
+    posAccessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+    posAccessor.count = mesh.vertices.size();
+    posAccessor.type = TINYGLTF_TYPE_VEC3;
+    posAccessor.minValues = {pMin[0], pMin[1], pMin[2]};
+    posAccessor.maxValues = {pMax[0], pMax[1], pMax[2]};
+
+    primitive.attributes["POSITION"] = 0;
+    primitive.mode = TINYGLTF_MODE_TRIANGLES;
+
+    // Add Draco extension
+    tinygltf::Value::Object dracoObj;
+    dracoObj["bufferView"] = tinygltf::Value(0);
+    tinygltf::Value::Object attrsObj;
+    attrsObj["POSITION"] = tinygltf::Value(posAttId);
+    dracoObj["attributes"] = tinygltf::Value(attrsObj);
+    primitive.extensions["KHR_draco_mesh_compression"] = tinygltf::Value(dracoObj);
+
+    // Placeholder index accessor
+    tinygltf::Accessor idxAccessor;
+    idxAccessor.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
+    idxAccessor.count = mesh.faces.size() * 3;
+    idxAccessor.type = TINYGLTF_TYPE_SCALAR;
+    idxAccessor.bufferView = -1;
+    primitive.indices = 1;
+
+    model.buffers.push_back(buffer);
+    model.bufferViews.push_back(bufferView);
+    model.accessors.push_back(posAccessor);
+    model.accessors.push_back(idxAccessor);
+
+    model.extensionsUsed.push_back("KHR_draco_mesh_compression");
+    model.extensionsRequired.push_back("KHR_draco_mesh_compression");
+
+    gltfMesh.primitives.push_back(primitive);
+    model.meshes.push_back(gltfMesh);
+
+    tinygltf::Node node;
+    node.mesh = 0;
+    model.nodes.push_back(node);
+
+    scene.nodes.push_back(0);
+    model.scenes.push_back(scene);
+    model.defaultScene = 0;
+
+    tinygltf::TinyGLTF writer;
+    return writer.WriteGltfSceneToFile(&model, filepath, false, true, true, true);
+#elif defined(PYLMESH_USE_TINYGLTF)
+    // Fallback to uncompressed GLB
     tinygltf::Model model;
     tinygltf::Scene scene;
     tinygltf::Mesh gltfMesh;

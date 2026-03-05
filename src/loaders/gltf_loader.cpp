@@ -17,71 +17,87 @@ bool GLTFLoader::canLoad(const std::string& filepath) const {
 
 bool GLTFLoader::load(const std::string& filepath, Mesh& mesh) {
 #ifdef PYLMESH_USE_TINYGLTF
-    tinygltf::Model model;
-    tinygltf::TinyGLTF loader;
-    std::string err, warn;
+    try {
+        tinygltf::Model model;
+        tinygltf::TinyGLTF loader;
+        std::string err, warn;
 
-    bool ret;
-    if (filepath.substr(filepath.size() - 4) == ".glb") {
-        ret = loader.LoadBinaryFromFile(&model, &err, &warn, filepath);
-    } else {
-        ret = loader.LoadASCIIFromFile(&model, &err, &warn, filepath);
-    }
+        bool ret;
+        if (filepath.substr(filepath.size() - 4) == ".glb") {
+            ret = loader.LoadBinaryFromFile(&model, &err, &warn, filepath);
+        } else {
+            ret = loader.LoadASCIIFromFile(&model, &err, &warn, filepath);
+        }
 
-    if (!ret) return false;
+        if (!ret) return false;
 
-    mesh.clear();
+        mesh.clear();
 
-    for (const auto& gltfMesh : model.meshes) {
-        for (const auto& primitive : gltfMesh.primitives) {
-            if (primitive.mode != TINYGLTF_MODE_TRIANGLES) continue;
+        for (const auto& gltfMesh : model.meshes) {
+            for (const auto& primitive : gltfMesh.primitives) {
+                if (primitive.mode != TINYGLTF_MODE_TRIANGLES) continue;
 
-            size_t vertexOffset = mesh.vertices.size();
+                size_t vertexOffset = mesh.vertices.size();
 
-            // Load positions
-            auto posIt = primitive.attributes.find("POSITION");
-            if (posIt != primitive.attributes.end()) {
-                const auto& accessor = model.accessors[posIt->second];
-                const auto& bufferView = model.bufferViews[accessor.bufferView];
-                const auto& buffer = model.buffers[bufferView.buffer];
-                const float* positions = reinterpret_cast<const float*>(
-                    &buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+                // Load positions
+                auto posIt = primitive.attributes.find("POSITION");
+                if (posIt != primitive.attributes.end()) {
+                    const auto& accessor = model.accessors[posIt->second];
+                    if (accessor.bufferView < 0 || accessor.bufferView >= model.bufferViews.size()) continue;
+                    
+                    const auto& bufferView = model.bufferViews[accessor.bufferView];
+                    if (bufferView.buffer < 0 || bufferView.buffer >= model.buffers.size()) continue;
+                    
+                    const auto& buffer = model.buffers[bufferView.buffer];
+                    if (bufferView.byteOffset + accessor.byteOffset + accessor.count * 3 * sizeof(float) > buffer.data.size()) continue;
+                    
+                    const float* positions = reinterpret_cast<const float*>(
+                        &buffer.data[bufferView.byteOffset + accessor.byteOffset]);
 
-                for (size_t i = 0; i < accessor.count; ++i) {
-                    Vertex v;
-                    v.x = positions[i * 3];
-                    v.y = positions[i * 3 + 1];
-                    v.z = positions[i * 3 + 2];
-                    mesh.vertices.push_back(v);
-                }
-            }
-
-            // Load indices
-            if (primitive.indices >= 0) {
-                const auto& accessor = model.accessors[primitive.indices];
-                const auto& bufferView = model.bufferViews[accessor.bufferView];
-                const auto& buffer = model.buffers[bufferView.buffer];
-                const uint8_t* data = &buffer.data[bufferView.byteOffset + accessor.byteOffset];
-
-                for (size_t i = 0; i < accessor.count; i += 3) {
-                    Face f;
-                    for (int j = 0; j < 3; ++j) {
-                        uint32_t idx;
-                        if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
-                            idx = reinterpret_cast<const uint16_t*>(data)[i + j];
-                        else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)
-                            idx = reinterpret_cast<const uint32_t*>(data)[i + j];
-                        else
-                            idx = data[i + j];
-                        f.indices.push_back(vertexOffset + idx);
+                    for (size_t i = 0; i < accessor.count; ++i) {
+                        Vertex v;
+                        v.x = positions[i * 3];
+                        v.y = positions[i * 3 + 1];
+                        v.z = positions[i * 3 + 2];
+                        mesh.vertices.push_back(v);
                     }
-                    mesh.faces.push_back(f);
+                }
+
+                // Load indices
+                if (primitive.indices >= 0 && primitive.indices < model.accessors.size()) {
+                    const auto& accessor = model.accessors[primitive.indices];
+                    if (accessor.bufferView < 0 || accessor.bufferView >= model.bufferViews.size()) continue;
+                    
+                    const auto& bufferView = model.bufferViews[accessor.bufferView];
+                    if (bufferView.buffer < 0 || bufferView.buffer >= model.buffers.size()) continue;
+                    
+                    const auto& buffer = model.buffers[bufferView.buffer];
+                    const uint8_t* data = &buffer.data[bufferView.byteOffset + accessor.byteOffset];
+
+                    for (size_t i = 0; i < accessor.count; i += 3) {
+                        if (i + 2 >= accessor.count) break;
+                        
+                        Face f;
+                        for (int j = 0; j < 3; ++j) {
+                            uint32_t idx;
+                            if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
+                                idx = reinterpret_cast<const uint16_t*>(data)[i + j];
+                            else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)
+                                idx = reinterpret_cast<const uint32_t*>(data)[i + j];
+                            else
+                                idx = data[i + j];
+                            f.indices.push_back(vertexOffset + idx);
+                        }
+                        mesh.faces.push_back(f);
+                    }
                 }
             }
         }
-    }
 
-    return !mesh.isEmpty();
+        return !mesh.isEmpty();
+    } catch (...) {
+        return false;
+    }
 #else
     return false;
 #endif
