@@ -1,12 +1,32 @@
+/*****************************************************************************************
+ * Copyright (c) 2025 - 2026, Open Brain Institute
+ *
+ * Author(s):
+ *   Marwan Abdellah <marwan.abdellah@openbraininstitute.org>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *****************************************************************************************/
+
+#include "pylmesh/exporter.h"
+#include "pylmesh/loader.h"
+#include "pylmesh/mesh.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include "pylmesh/mesh.h"
-#include "pylmesh/loader.h"
-#include "pylmesh/exporter.h"
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(_pylmesh, m) {
+PYBIND11_MODULE(_pylmesh, m)
+{
     m.doc() = "Python bindings for pylmesh - 3D mesh file loader";
 
     py::class_<pylmesh::Vertex>(m, "Vertex")
@@ -43,18 +63,31 @@ PYBIND11_MODULE(_pylmesh, m) {
         .def("get_vertices_array", &pylmesh::Mesh::getVerticesArray)
         .def("get_faces_array", &pylmesh::Mesh::getFacesArray);
 
-    m.def("load_mesh", [](const std::string& filepath) {
-        pylmesh::Mesh mesh;
-        if (pylmesh::MeshLoaderFactory::loadMesh(filepath, mesh)) {
-            return mesh;
-        }
-        throw std::runtime_error("Failed to load mesh: " + filepath + ". Check if file exists and format is supported.");
-    }, py::arg("filepath"), "Load a mesh from file (supports .obj, .stl, .ply, .off, .gltf, .glb)");
+    m.def(
+        "load_mesh",
+        [](const std::string& filepath)
+        {
+            pylmesh::Mesh mesh;
+            if (pylmesh::MeshLoaderFactory::loadMesh(filepath, mesh))
+            {
+                return mesh;
+            }
+            throw std::runtime_error("Failed to load mesh: " + filepath +
+                                     ". Check if file exists and format is supported.");
+        },
+        py::arg("filepath"),
+        "Load a mesh from file (supports .obj, .stl, .ply, .off, .gltf, .glb)");
 
-    m.def("save_mesh", [](const std::string& filepath, const pylmesh::Mesh& mesh) {
-        if (pylmesh::MeshExporterFactory::saveMesh(filepath, mesh)) {
-            return true;
-        }
-        throw std::runtime_error("Failed to save mesh: " + filepath);
-    }, py::arg("filepath"), py::arg("mesh"), "Save a mesh to file (supports .obj, .stl, .ply, .off)");
+    m.def(
+        "save_mesh",
+        [](const std::string& filepath, const pylmesh::Mesh& mesh)
+        {
+            if (pylmesh::MeshExporterFactory::saveMesh(filepath, mesh))
+            {
+                return true;
+            }
+            throw std::runtime_error("Failed to save mesh: " + filepath);
+        },
+        py::arg("filepath"), py::arg("mesh"),
+        "Save a mesh to file (supports .obj, .stl, .ply, .off)");
 }

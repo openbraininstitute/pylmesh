@@ -1,6 +1,25 @@
+/*****************************************************************************************
+ * Copyright (c) 2025 - 2026, Open Brain Institute
+ *
+ * Author(s):
+ *   Marwan Abdellah <marwan.abdellah@openbraininstitute.org>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *****************************************************************************************/
+
 #include "pylmesh/exporters/gltf_exporter.h"
-#include <cstring>
 #include <algorithm>
+#include <cstring>
 #include <limits>
 
 #ifdef PYLMESH_USE_TINYGLTF
@@ -12,13 +31,16 @@
 #include "draco/mesh/mesh.h"
 #endif
 
-namespace pylmesh {
+namespace pylmesh
+{
 
-bool GLTFExporter::canSave(const std::string& filepath) const {
+bool GLTFExporter::canSave(const std::string& filepath) const
+{
     return filepath.size() >= 5 && filepath.substr(filepath.size() - 5) == ".gltf";
 }
 
-bool GLTFExporter::save(const std::string& filepath, const Mesh& mesh) {
+bool GLTFExporter::save(const std::string& filepath, const Mesh& mesh)
+{
 #ifdef PYLMESH_USE_TINYGLTF
     tinygltf::Model model;
     tinygltf::Scene scene;
@@ -29,10 +51,13 @@ bool GLTFExporter::save(const std::string& filepath, const Mesh& mesh) {
     // Pack positions
     std::vector<float> positions;
     positions.reserve(mesh.vertices.size() * 3);
-    float pMin[3] = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
-    float pMax[3] = {-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
+    float pMin[3] = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
+                     std::numeric_limits<float>::max()};
+    float pMax[3] = {-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(),
+                     -std::numeric_limits<float>::max()};
 
-    for (const auto& v : mesh.vertices) {
+    for (const auto& v : mesh.vertices)
+    {
         positions.push_back(v.x);
         positions.push_back(v.y);
         positions.push_back(v.z);
@@ -46,8 +71,10 @@ bool GLTFExporter::save(const std::string& filepath, const Mesh& mesh) {
 
     // Pack indices
     std::vector<uint32_t> indices;
-    for (const auto& f : mesh.faces) {
-        for (auto idx : f.indices) {
+    for (const auto& f : mesh.faces)
+    {
+        for (auto idx : f.indices)
+        {
             indices.push_back(idx);
         }
     }
@@ -120,11 +147,13 @@ bool GLTFExporter::save(const std::string& filepath, const Mesh& mesh) {
 #endif
 }
 
-bool GLBExporter::canSave(const std::string& filepath) const {
+bool GLBExporter::canSave(const std::string& filepath) const
+{
     return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".glb";
 }
 
-bool GLBExporter::save(const std::string& filepath, const Mesh& mesh) {
+bool GLBExporter::save(const std::string& filepath, const Mesh& mesh)
+{
 #if defined(PYLMESH_USE_TINYGLTF) && defined(PYLMESH_USE_DRACO)
     // Use Draco compression
     tinygltf::Model model;
@@ -139,18 +168,20 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh) {
 
     // Add position attribute
     draco::GeometryAttribute posAttr;
-    posAttr.Init(draco::GeometryAttribute::POSITION, nullptr, 3,
-                 draco::DT_FLOAT32, false, sizeof(float) * 3, 0);
+    posAttr.Init(draco::GeometryAttribute::POSITION, nullptr, 3, draco::DT_FLOAT32, false,
+                 sizeof(float) * 3, 0);
     int posAttId = dracoMesh.AddAttribute(posAttr, true, mesh.vertices.size());
 
-    float pMin[3] = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
-    float pMax[3] = {-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
+    float pMin[3] = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
+                     std::numeric_limits<float>::max()};
+    float pMax[3] = {-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(),
+                     -std::numeric_limits<float>::max()};
 
     // Set vertex positions
-    for (size_t i = 0; i < mesh.vertices.size(); ++i) {
+    for (size_t i = 0; i < mesh.vertices.size(); ++i)
+    {
         float pos[3] = {mesh.vertices[i].x, mesh.vertices[i].y, mesh.vertices[i].z};
-        dracoMesh.attribute(posAttId)->SetAttributeValue(
-            draco::AttributeValueIndex(i), pos);
+        dracoMesh.attribute(posAttId)->SetAttributeValue(draco::AttributeValueIndex(i), pos);
         pMin[0] = std::min(pMin[0], pos[0]);
         pMin[1] = std::min(pMin[1], pos[1]);
         pMin[2] = std::min(pMin[2], pos[2]);
@@ -160,8 +191,10 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh) {
     }
 
     // Set faces
-    for (size_t i = 0; i < mesh.faces.size(); ++i) {
-        if (mesh.faces[i].indices.size() >= 3) {
+    for (size_t i = 0; i < mesh.faces.size(); ++i)
+    {
+        if (mesh.faces[i].indices.size() >= 3)
+        {
             draco::Mesh::Face face;
             face[0] = mesh.faces[i].indices[0];
             face[1] = mesh.faces[i].indices[1];
@@ -176,7 +209,8 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh) {
     encoder.SetAttributeQuantization(draco::GeometryAttribute::POSITION, 14);
 
     draco::EncoderBuffer encBuffer;
-    if (!encoder.EncodeMeshToBuffer(dracoMesh, &encBuffer).ok()) {
+    if (!encoder.EncodeMeshToBuffer(dracoMesh, &encBuffer).ok())
+    {
         return false;
     }
 
@@ -249,10 +283,13 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh) {
     // Pack positions
     std::vector<float> positions;
     positions.reserve(mesh.vertices.size() * 3);
-    float pMin[3] = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
-    float pMax[3] = {-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
+    float pMin[3] = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
+                     std::numeric_limits<float>::max()};
+    float pMax[3] = {-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(),
+                     -std::numeric_limits<float>::max()};
 
-    for (const auto& v : mesh.vertices) {
+    for (const auto& v : mesh.vertices)
+    {
         positions.push_back(v.x);
         positions.push_back(v.y);
         positions.push_back(v.z);
@@ -266,8 +303,10 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh) {
 
     // Pack indices
     std::vector<uint32_t> indices;
-    for (const auto& f : mesh.faces) {
-        for (auto idx : f.indices) {
+    for (const auto& f : mesh.faces)
+    {
+        for (auto idx : f.indices)
+        {
             indices.push_back(idx);
         }
     }
@@ -340,4 +379,4 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh) {
 #endif
 }
 
-}
+} // namespace pylmesh
