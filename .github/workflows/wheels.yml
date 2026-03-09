@@ -20,14 +20,15 @@ jobs:
         submodules: recursive
 
     - name: Install dependencies
+      if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake ninja-build
+        sudo apt-get install -y cmake ninja-build git
 
     - name: Build wheels
       uses: pypa/cibuildwheel@v2.16.2
       env:
-        CIBW_BEFORE_ALL_LINUX: "yum install -y cmake3 || apt-get update && apt-get install -y cmake"
+        CIBW_BEFORE_ALL_LINUX: "yum install -y cmake3 git || apt-get update && apt-get install -y cmake git"
 
     - uses: actions/upload-artifact@v3
       with:
