@@ -79,6 +79,16 @@ jobs:
           name: cibw-wheels-linux
           path: wheelhouse/*.whl
 
+      - name: Set up Python
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: pip install build twine
+
       - name: Build sdist and wheel
         if: startsWith(github.ref, 'refs/tags/v')
         run: python -m build
