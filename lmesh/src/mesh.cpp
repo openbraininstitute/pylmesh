@@ -17,51 +17,58 @@
  * limitations under the License.
  *****************************************************************************************/
 
-#include "pylmesh/exporters/obj_exporter.h"
-#include <fstream>
+#include "lmesh/mesh.h"
 
 namespace pylmesh
 {
 
-bool OBJExporter::canSave(const std::string& filepath) const
+void Mesh::clear()
 {
-    return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".obj";
+    vertices.clear();
+    normals.clear();
+    texcoords.clear();
+    faces.clear();
 }
 
-bool OBJExporter::save(const std::string& filepath, const Mesh& mesh)
+bool Mesh::isEmpty() const
 {
-    std::ofstream file(filepath);
-    if (!file.is_open())
-        return false;
+    return vertices.empty();
+}
 
-    file << "# OBJ file exported by pylmesh\n";
+size_t Mesh::vertexCount() const
+{
+    return vertices.size();
+}
 
-    for (const auto& v : mesh.vertices)
+size_t Mesh::faceCount() const
+{
+    return faces.size();
+}
+
+std::vector<float> Mesh::getVerticesArray() const
+{
+    std::vector<float> result;
+    result.reserve(vertices.size() * 3);
+    for (const auto& v : vertices)
     {
-        file << "v " << v.x << " " << v.y << " " << v.z << "\n";
+        result.push_back(v.x);
+        result.push_back(v.y);
+        result.push_back(v.z);
     }
+    return result;
+}
 
-    for (const auto& n : mesh.normals)
+std::vector<unsigned int> Mesh::getFacesArray() const
+{
+    std::vector<unsigned int> result;
+    for (const auto& f : faces)
     {
-        file << "vn " << n.nx << " " << n.ny << " " << n.nz << "\n";
-    }
-
-    for (const auto& t : mesh.texcoords)
-    {
-        file << "vt " << t.u << " " << t.v << "\n";
-    }
-
-    for (const auto& f : mesh.faces)
-    {
-        file << "f";
         for (auto idx : f.indices)
         {
-            file << " " << (idx + 1);
+            result.push_back(idx);
         }
-        file << "\n";
     }
-
-    return true;
+    return result;
 }
 
 } // namespace pylmesh

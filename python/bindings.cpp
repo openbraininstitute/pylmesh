@@ -17,9 +17,9 @@
  * limitations under the License.
  *****************************************************************************************/
 
-#include "pylmesh/exporter.h"
-#include "pylmesh/loader.h"
-#include "pylmesh/mesh.h"
+#include "lmesh/exporter.h"
+#include "lmesh/loader.h"
+#include "lmesh/mesh.h"
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>

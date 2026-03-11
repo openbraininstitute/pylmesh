@@ -43,7 +43,12 @@ include(Draco)
 include(nanobind)
 
 # Build library
-add_subdirectory(src)
+add_subdirectory(lmesh)
+
+# Build Python bindings
+if(BUILD_PYTHON)
+    add_subdirectory(python)
+endif()
 
 # Build examples
 if(BUILD_EXAMPLES)

@@ -17,12 +17,12 @@
  * limitations under the License.
  *****************************************************************************************/
 
-#include "pylmesh/loader.h"
-#include "pylmesh/loaders/gltf_loader.h"
-#include "pylmesh/loaders/obj_loader.h"
-#include "pylmesh/loaders/off_loader.h"
-#include "pylmesh/loaders/ply_loader.h"
-#include "pylmesh/loaders/stl_loader.h"
+#include "lmesh/loader.h"
+#include "lmesh/loaders/gltf_loader.h"
+#include "lmesh/loaders/obj_loader.h"
+#include "lmesh/loaders/off_loader.h"
+#include "lmesh/loaders/ply_loader.h"
+#include "lmesh/loaders/stl_loader.h"
 
 namespace pylmesh
 {

@@ -1,4 +1,4 @@
-#include <pylmesh/loader.h>
+#include <lmesh/loader.h>
 #include <iostream>
 
 int main(int argc, char* argv[]) {

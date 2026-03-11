@@ -17,12 +17,12 @@
  * limitations under the License.
  *****************************************************************************************/
 
-#include "pylmesh/exporter.h"
-#include "pylmesh/exporters/gltf_exporter.h"
-#include "pylmesh/exporters/obj_exporter.h"
-#include "pylmesh/exporters/off_exporter.h"
-#include "pylmesh/exporters/ply_exporter.h"
-#include "pylmesh/exporters/stl_exporter.h"
+#include "lmesh/exporter.h"
+#include "lmesh/exporters/gltf_exporter.h"
+#include "lmesh/exporters/obj_exporter.h"
+#include "lmesh/exporters/off_exporter.h"
+#include "lmesh/exporters/ply_exporter.h"
+#include "lmesh/exporters/stl_exporter.h"
 
 namespace pylmesh
 {

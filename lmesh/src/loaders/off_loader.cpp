@@ -17,49 +17,55 @@
  * limitations under the License.
  *****************************************************************************************/
 
-#include "pylmesh/exporters/ply_exporter.h"
+#include "lmesh/loaders/off_loader.h"
 #include <fstream>
+#include <sstream>
 
 namespace pylmesh
 {
 
-bool PLYExporter::canSave(const std::string& filepath) const
+bool OFFLoader::canLoad(const std::string& filepath) const
 {
-    return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".ply";
+    return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".off";
 }
 
-bool PLYExporter::save(const std::string& filepath, const Mesh& mesh)
+bool OFFLoader::load(const std::string& filepath, Mesh& mesh)
 {
-    std::ofstream file(filepath);
+    std::ifstream file(filepath);
     if (!file.is_open())
         return false;
 
-    file << "ply\n";
-    file << "format ascii 1.0\n";
-    file << "element vertex " << mesh.vertices.size() << "\n";
-    file << "property float x\n";
-    file << "property float y\n";
-    file << "property float z\n";
-    file << "element face " << mesh.faces.size() << "\n";
-    file << "property list uchar int vertex_indices\n";
-    file << "end_header\n";
+    mesh.clear();
+    std::string header;
+    file >> header;
+    if (header != "OFF")
+        return false;
 
-    for (const auto& v : mesh.vertices)
+    int nVertices, nFaces, nEdges;
+    file >> nVertices >> nFaces >> nEdges;
+
+    for (int i = 0; i < nVertices; ++i)
     {
-        file << v.x << " " << v.y << " " << v.z << "\n";
+        Vertex v;
+        file >> v.x >> v.y >> v.z;
+        mesh.vertices.push_back(v);
     }
 
-    for (const auto& f : mesh.faces)
+    for (int i = 0; i < nFaces; ++i)
     {
-        file << f.indices.size();
-        for (auto idx : f.indices)
+        int n;
+        file >> n;
+        Face f;
+        for (int j = 0; j < n; ++j)
         {
-            file << " " << idx;
+            unsigned int idx;
+            file >> idx;
+            f.indices.push_back(idx);
         }
-        file << "\n";
+        mesh.faces.push_back(f);
     }
 
-    return true;
+    return !mesh.isEmpty();
 }
 
 } // namespace pylmesh

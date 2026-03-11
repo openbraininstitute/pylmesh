@@ -17,55 +17,43 @@
  * limitations under the License.
  *****************************************************************************************/
 
-#include "pylmesh/loaders/off_loader.h"
+#include "lmesh/exporters/stl_exporter.h"
 #include <fstream>
-#include <sstream>
 
 namespace pylmesh
 {
 
-bool OFFLoader::canLoad(const std::string& filepath) const
+bool STLExporter::canSave(const std::string& filepath) const
 {
-    return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".off";
+    return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".stl";
 }
 
-bool OFFLoader::load(const std::string& filepath, Mesh& mesh)
+bool STLExporter::save(const std::string& filepath, const Mesh& mesh)
 {
-    std::ifstream file(filepath);
+    std::ofstream file(filepath);
     if (!file.is_open())
         return false;
 
-    mesh.clear();
-    std::string header;
-    file >> header;
-    if (header != "OFF")
-        return false;
+    file << "solid mesh\n";
 
-    int nVertices, nFaces, nEdges;
-    file >> nVertices >> nFaces >> nEdges;
-
-    for (int i = 0; i < nVertices; ++i)
+    for (const auto& face : mesh.faces)
     {
-        Vertex v;
-        file >> v.x >> v.y >> v.z;
-        mesh.vertices.push_back(v);
-    }
-
-    for (int i = 0; i < nFaces; ++i)
-    {
-        int n;
-        file >> n;
-        Face f;
-        for (int j = 0; j < n; ++j)
+        if (face.indices.size() >= 3)
         {
-            unsigned int idx;
-            file >> idx;
-            f.indices.push_back(idx);
+            file << "  facet normal 0 0 0\n";
+            file << "    outer loop\n";
+            for (size_t i = 0; i < 3; ++i)
+            {
+                const auto& v = mesh.vertices[face.indices[i]];
+                file << "      vertex " << v.x << " " << v.y << " " << v.z << "\n";
+            }
+            file << "    endloop\n";
+            file << "  endfacet\n";
         }
-        mesh.faces.push_back(f);
     }
 
-    return !mesh.isEmpty();
+    file << "endsolid mesh\n";
+    return true;
 }
 
 } // namespace pylmesh

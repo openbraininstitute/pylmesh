@@ -17,49 +17,51 @@
  * limitations under the License.
  *****************************************************************************************/
 
-#include "pylmesh/loaders/stl_loader.h"
+#include "lmesh/exporters/obj_exporter.h"
 #include <fstream>
-#include <sstream>
 
 namespace pylmesh
 {
 
-bool STLLoader::canLoad(const std::string& filepath) const
+bool OBJExporter::canSave(const std::string& filepath) const
 {
-    return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".stl";
+    return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".obj";
 }
 
-bool STLLoader::load(const std::string& filepath, Mesh& mesh)
+bool OBJExporter::save(const std::string& filepath, const Mesh& mesh)
 {
-    std::ifstream file(filepath);
+    std::ofstream file(filepath);
     if (!file.is_open())
         return false;
 
-    mesh.clear();
-    std::string line;
+    file << "# OBJ file exported by pylmesh\n";
 
-    while (std::getline(file, line))
+    for (const auto& v : mesh.vertices)
     {
-        std::istringstream iss(line);
-        std::string keyword;
-        iss >> keyword;
+        file << "v " << v.x << " " << v.y << " " << v.z << "\n";
+    }
 
-        if (keyword == "vertex")
+    for (const auto& n : mesh.normals)
+    {
+        file << "vn " << n.nx << " " << n.ny << " " << n.nz << "\n";
+    }
+
+    for (const auto& t : mesh.texcoords)
+    {
+        file << "vt " << t.u << " " << t.v << "\n";
+    }
+
+    for (const auto& f : mesh.faces)
+    {
+        file << "f";
+        for (auto idx : f.indices)
         {
-            Vertex v;
-            iss >> v.x >> v.y >> v.z;
-            mesh.vertices.push_back(v);
+            file << " " << (idx + 1);
         }
+        file << "\n";
     }
 
-    for (size_t i = 0; i < mesh.vertices.size(); i += 3)
-    {
-        Face f;
-        f.indices = {(unsigned int)i, (unsigned int)i + 1, (unsigned int)i + 2};
-        mesh.faces.push_back(f);
-    }
-
-    return !mesh.isEmpty();
+    return true;
 }
 
 } // namespace pylmesh

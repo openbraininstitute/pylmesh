@@ -17,19 +17,19 @@
  * limitations under the License.
  *****************************************************************************************/
 
-#include "pylmesh/loaders/ply_loader.h"
+#include "lmesh/loaders/obj_loader.h"
 #include <fstream>
 #include <sstream>
 
 namespace pylmesh
 {
 
-bool PLYLoader::canLoad(const std::string& filepath) const
+bool OBJLoader::canLoad(const std::string& filepath) const
 {
-    return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".ply";
+    return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".obj";
 }
 
-bool PLYLoader::load(const std::string& filepath, Mesh& mesh)
+bool OBJLoader::load(const std::string& filepath, Mesh& mesh)
 {
     std::ifstream file(filepath);
     if (!file.is_open())
@@ -37,51 +37,38 @@ bool PLYLoader::load(const std::string& filepath, Mesh& mesh)
 
     mesh.clear();
     std::string line;
-    int vertexCount = 0, faceCount = 0;
-    bool headerDone = false;
 
     while (std::getline(file, line))
     {
         std::istringstream iss(line);
-        std::string keyword;
-        iss >> keyword;
+        std::string prefix;
+        iss >> prefix;
 
-        if (keyword == "element")
-        {
-            std::string type;
-            int count;
-            iss >> type >> count;
-            if (type == "vertex")
-                vertexCount = count;
-            if (type == "face")
-                faceCount = count;
-        }
-        else if (keyword == "end_header")
-        {
-            headerDone = true;
-            break;
-        }
-    }
-
-    if (headerDone)
-    {
-        for (int i = 0; i < vertexCount; ++i)
+        if (prefix == "v")
         {
             Vertex v;
-            file >> v.x >> v.y >> v.z;
+            iss >> v.x >> v.y >> v.z;
             mesh.vertices.push_back(v);
-            std::getline(file, line);
         }
-
-        for (int i = 0; i < faceCount; ++i)
+        else if (prefix == "vn")
         {
-            int n;
-            file >> n;
+            Normal n;
+            iss >> n.nx >> n.ny >> n.nz;
+            mesh.normals.push_back(n);
+        }
+        else if (prefix == "vt")
+        {
+            TexCoord t;
+            iss >> t.u >> t.v;
+            mesh.texcoords.push_back(t);
+        }
+        else if (prefix == "f")
+        {
             Face f;
-            for (int j = 0; j < n; ++j)
+            std::string vertex;
+            while (iss >> vertex)
             {
-                unsigned int idx;
-                file >> idx;
+                unsigned int idx = std::stoi(vertex.substr(0, vertex.find('/'))) - 1;
                 f.indices.push_back(idx);
             }
             mesh.faces.push_back(f);

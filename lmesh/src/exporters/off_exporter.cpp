@@ -17,7 +17,7 @@
  * limitations under the License.
  *****************************************************************************************/
 
-#include "pylmesh/exporters/off_exporter.h"
+#include "lmesh/exporters/off_exporter.h"
 #include <fstream>
 
 namespace pylmesh

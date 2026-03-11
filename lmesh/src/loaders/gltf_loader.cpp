@@ -17,7 +17,7 @@
  * limitations under the License.
  *****************************************************************************************/
 
-#include "pylmesh/loaders/gltf_loader.h"
+#include "lmesh/loaders/gltf_loader.h"
 
 #ifdef PYLMESH_USE_TINYGLTF
 #define TINYGLTF_IMPLEMENTATION

@@ -17,58 +17,49 @@
  * limitations under the License.
  *****************************************************************************************/
 
-#include "pylmesh/mesh.h"
+#include "lmesh/loaders/stl_loader.h"
+#include <fstream>
+#include <sstream>
 
 namespace pylmesh
 {
 
-void Mesh::clear()
+bool STLLoader::canLoad(const std::string& filepath) const
 {
-    vertices.clear();
-    normals.clear();
-    texcoords.clear();
-    faces.clear();
+    return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".stl";
 }
 
-bool Mesh::isEmpty() const
+bool STLLoader::load(const std::string& filepath, Mesh& mesh)
 {
-    return vertices.empty();
-}
+    std::ifstream file(filepath);
+    if (!file.is_open())
+        return false;
 
-size_t Mesh::vertexCount() const
-{
-    return vertices.size();
-}
+    mesh.clear();
+    std::string line;
 
-size_t Mesh::faceCount() const
-{
-    return faces.size();
-}
-
-std::vector<float> Mesh::getVerticesArray() const
-{
-    std::vector<float> result;
-    result.reserve(vertices.size() * 3);
-    for (const auto& v : vertices)
+    while (std::getline(file, line))
     {
-        result.push_back(v.x);
-        result.push_back(v.y);
-        result.push_back(v.z);
-    }
-    return result;
-}
+        std::istringstream iss(line);
+        std::string keyword;
+        iss >> keyword;
 
-std::vector<unsigned int> Mesh::getFacesArray() const
-{
-    std::vector<unsigned int> result;
-    for (const auto& f : faces)
-    {
-        for (auto idx : f.indices)
+        if (keyword == "vertex")
         {
-            result.push_back(idx);
+            Vertex v;
+            iss >> v.x >> v.y >> v.z;
+            mesh.vertices.push_back(v);
         }
     }
-    return result;
+
+    for (size_t i = 0; i < mesh.vertices.size(); i += 3)
+    {
+        Face f;
+        f.indices = {(unsigned int)i, (unsigned int)i + 1, (unsigned int)i + 2};
+        mesh.faces.push_back(f);
+    }
+
+    return !mesh.isEmpty();
 }
 
 } // namespace pylmesh

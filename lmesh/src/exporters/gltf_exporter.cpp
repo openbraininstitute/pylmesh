@@ -17,7 +17,7 @@
  * limitations under the License.
  *****************************************************************************************/
 
-#include "pylmesh/exporters/gltf_exporter.h"
+#include "lmesh/exporters/gltf_exporter.h"
 #include <algorithm>
 #include <cstring>
 #include <limits>
