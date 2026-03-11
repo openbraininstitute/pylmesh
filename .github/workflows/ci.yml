@@ -36,43 +36,33 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install host system packages
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            cmake \
-            ninja-build \
-            git \
-            pkg-config \
-            libhdf5-dev \
-            python3-dev
-
-      - name: Build C++ dependencies from source
-        run: |
-          set -euxo pipefail
-          cd /tmp
-
-          git clone --depth 1 https://github.com/g-truc/glm.git
-          sudo cp -r glm/glm /usr/local/include/
-          rm -rf glm
-
-          git clone --depth 1 https://github.com/nlohmann/json.git
-          cd json
-          cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DJSON_BuildTests=OFF .
-          sudo cmake --install .
-          cd /tmp
-          rm -rf json
-
-          echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/usr-local.conf
-          sudo ldconfig
-
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.16.5
         env:
           CIBW_BUILD: "cp312-manylinux_x86_64"
           CIBW_SKIP: "*musllinux*"
           CIBW_MANYLINUX_X86_64_IMAGE: "manylinux_2_28"
+          CIBW_BEFORE_ALL: |
+            set -euxo pipefail
+
+            # HDF5 via EPEL (manylinux_2_28 is Fedora/RHEL-based)
+            dnf install -y epel-release
+            dnf install -y hdf5-devel
+
+            # GLM (header-only)
+            cd /tmp
+            git clone --depth 1 https://github.com/g-truc/glm.git
+            cp -r glm/glm /usr/local/include/
+            rm -rf glm
+
+            # nlohmann/json
+            git clone --depth 1 https://github.com/nlohmann/json.git
+            cd json
+            cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DJSON_BuildTests=OFF .
+            cmake --install .
+            cd /tmp && rm -rf json
+
+            ldconfig
           CIBW_BEFORE_BUILD: |
             pip install --upgrade pip
             pip install nanobind scikit-build-core typing_extensions
