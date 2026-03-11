@@ -1,8 +1,7 @@
 include README.md
 include LICENSE
-include FEATURES.md
-include API.md
-recursive-include include *.h
-recursive-include src *.cpp
+include pylmesh.version
+recursive-include lmesh/include *.h
+recursive-include lmesh/src *.cpp
 recursive-include python *.cpp *.py
-recursive-exclude include/pylmesh/external *
+recursive-exclude lmesh/include/lmesh/external *

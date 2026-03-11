@@ -1,0 +1,5 @@
+if(BUILD_PYTHON)
+    nanobind_add_module(_pylmesh bindings.cpp)
+    target_link_libraries(_pylmesh PRIVATE lmesh)
+    install(TARGETS _pylmesh LIBRARY DESTINATION . COMPONENT python)
+endif()

@@ -1,6 +1,7 @@
 # pylmesh
 
-A lightweight C++ library for loading 3D mesh files in multiple formats.
+pylmesh is a **l**ightweight **python** library for importing and exporting surface **mesh** files in multiple formats. 
+The library is designed in C++ with python bindings to feature high performance and loading large scale meshes. 
 
 ## Supported Formats
 - OBJ (Wavefront) - Import/Export
@@ -9,8 +10,6 @@ A lightweight C++ library for loading 3D mesh files in multiple formats.
 - OFF (Object File Format) - Import/Export
 - GLTF - Import/Export
 - GLB - Import/Export (with Draco compression)
-
-
 
 ## Usage
 
@@ -66,9 +65,3 @@ make
 ```
 
 All dependencies (tinygltf, nlohmann/json, stb, draco) are automatically downloaded.
-
-## Architecture
-- `include/pylmesh/` - Public headers
-- `src/` - Implementation
-- `examples/` - Usage examples
-- `tests/` - Unit tests
