@@ -20,42 +20,43 @@
 #include "pylmesh/exporter.h"
 #include "pylmesh/loader.h"
 #include "pylmesh/mesh.h"
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/vector.h>
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
-PYBIND11_MODULE(_pylmesh, m)
+NB_MODULE(_pylmesh, m)
 {
     m.doc() = "Python bindings for pylmesh - 3D mesh file loader";
 
-    py::class_<pylmesh::Vertex>(m, "Vertex")
-        .def(py::init<>())
-        .def_readwrite("x", &pylmesh::Vertex::x)
-        .def_readwrite("y", &pylmesh::Vertex::y)
-        .def_readwrite("z", &pylmesh::Vertex::z);
+    nb::class_<pylmesh::Vertex>(m, "Vertex")
+        .def(nb::init<>())
+        .def_rw("x", &pylmesh::Vertex::x)
+        .def_rw("y", &pylmesh::Vertex::y)
+        .def_rw("z", &pylmesh::Vertex::z);
 
-    py::class_<pylmesh::Normal>(m, "Normal")
-        .def(py::init<>())
-        .def_readwrite("nx", &pylmesh::Normal::nx)
-        .def_readwrite("ny", &pylmesh::Normal::ny)
-        .def_readwrite("nz", &pylmesh::Normal::nz);
+    nb::class_<pylmesh::Normal>(m, "Normal")
+        .def(nb::init<>())
+        .def_rw("nx", &pylmesh::Normal::nx)
+        .def_rw("ny", &pylmesh::Normal::ny)
+        .def_rw("nz", &pylmesh::Normal::nz);
 
-    py::class_<pylmesh::TexCoord>(m, "TexCoord")
-        .def(py::init<>())
-        .def_readwrite("u", &pylmesh::TexCoord::u)
-        .def_readwrite("v", &pylmesh::TexCoord::v);
+    nb::class_<pylmesh::TexCoord>(m, "TexCoord")
+        .def(nb::init<>())
+        .def_rw("u", &pylmesh::TexCoord::u)
+        .def_rw("v", &pylmesh::TexCoord::v);
 
-    py::class_<pylmesh::Face>(m, "Face")
-        .def(py::init<>())
-        .def_readwrite("indices", &pylmesh::Face::indices);
+    nb::class_<pylmesh::Face>(m, "Face")
+        .def(nb::init<>())
+        .def_rw("indices", &pylmesh::Face::indices);
 
-    py::class_<pylmesh::Mesh>(m, "Mesh")
-        .def(py::init<>())
-        .def_readwrite("vertices", &pylmesh::Mesh::vertices)
-        .def_readwrite("normals", &pylmesh::Mesh::normals)
-        .def_readwrite("texcoords", &pylmesh::Mesh::texcoords)
-        .def_readwrite("faces", &pylmesh::Mesh::faces)
+    nb::class_<pylmesh::Mesh>(m, "Mesh")
+        .def(nb::init<>())
+        .def_rw("vertices", &pylmesh::Mesh::vertices)
+        .def_rw("normals", &pylmesh::Mesh::normals)
+        .def_rw("texcoords", &pylmesh::Mesh::texcoords)
+        .def_rw("faces", &pylmesh::Mesh::faces)
         .def("clear", &pylmesh::Mesh::clear)
         .def("is_empty", &pylmesh::Mesh::isEmpty)
         .def("vertex_count", &pylmesh::Mesh::vertexCount)
@@ -75,7 +76,7 @@ PYBIND11_MODULE(_pylmesh, m)
             throw std::runtime_error("Failed to load mesh: " + filepath +
                                      ". Check if file exists and format is supported.");
         },
-        py::arg("filepath"),
+        nb::arg("filepath"),
         "Load a mesh from file (supports .obj, .stl, .ply, .off, .gltf, .glb)");
 
     m.def(
@@ -88,6 +89,6 @@ PYBIND11_MODULE(_pylmesh, m)
             }
             throw std::runtime_error("Failed to save mesh: " + filepath);
         },
-        py::arg("filepath"), py::arg("mesh"),
+        nb::arg("filepath"), nb::arg("mesh"),
         "Save a mesh to file (supports .obj, .stl, .ply, .off)");
 }
