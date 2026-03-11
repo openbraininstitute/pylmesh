@@ -31,6 +31,9 @@ jobs:
   build-wheels:
     name: Build wheels (Linux)
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # Required for OIDC authentication with AWS
+      contents: write   # Required for uploading release assets
 
     steps:
       - name: Checkout repository
