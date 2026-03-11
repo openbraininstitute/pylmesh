@@ -1,2 +1,15 @@
+# Build requirements for pylmesh
+scikit-build-core>=0.8.0
+nanobind>=2.0.0
+cmake>=3.15
+ninja
+
+# Optional dependencies for trimesh support
+trimesh>=3.9.0
+
+# Optional dependencies for notebooks
+jupyter>=1.0.0
+matplotlib>=3.3.0
+
 # Runtime dependencies
 numpy>=1.19.0

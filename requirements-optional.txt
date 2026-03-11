@@ -1,6 +1,0 @@
-# Optional dependencies for trimesh support
-trimesh>=3.9.0
-
-# Optional dependencies for notebooks
-jupyter>=1.0.0
-matplotlib>=3.3.0

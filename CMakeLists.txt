@@ -25,7 +25,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Build options, set ON by default 
 option(BUILD_EXAMPLES "Build examples" ON)
-option(BUILD_TESTS "Build tests" ON)
 option(BUILD_PYTHON "Build Python bindings" ON)
 option(ENABLE_GLTF "Enable GLTF/GLB support" ON)
 option(ENABLE_DRACO "Enable Draco compression for GLB" ON)
@@ -49,10 +48,4 @@ add_subdirectory(src)
 # Build examples
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
-endif()
-
-# Build tests
-if(BUILD_TESTS AND EXISTS "${CMAKE_SOURCE_DIR}/tests")
-    enable_testing()
-    add_subdirectory(tests)
 endif()
