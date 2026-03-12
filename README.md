@@ -70,17 +70,8 @@ pip install pylmesh
 
 **With optional features:**
 ```bash
-# Add trimesh support
-pip install pylmesh[trimesh]
-
-# Add batch conversion tools
-pip install pylmesh[batch]
-
 # Add development tools
 pip install pylmesh[dev]
-
-# Install everything
-pip install pylmesh[trimesh,batch,dev]
 ```
 
 **From source:**
