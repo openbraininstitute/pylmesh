@@ -162,6 +162,14 @@ jobs:
           CIBW_BEFORE_ALL: |
             set -euxo pipefail
 
+            # Compute and persist the deployment target so CIBW_ENVIRONMENT
+            # can reference it via a simple $(cat ...) — bashlex cannot parse
+            # $() containing quotes, dots, or pipes inside the environment block.
+            OS_VER=$(sw_vers -productVersion)
+            MAJOR=$(echo "$OS_VER" | cut -d. -f1)
+            MINOR=$(echo "$OS_VER" | cut -d. -f2)
+            echo "${MAJOR}.${MINOR}" > /tmp/macos_deployment_target.txt
+
             # GLM — header-only
             cd /tmp
             rm -rf glm
@@ -202,8 +210,7 @@ jobs:
 
           CIBW_ENVIRONMENT: >
             CMAKE_PREFIX_PATH="~/.local"
-            MACOSX_DEPLOYMENT_TARGET="$(python3 -c \"import platform; v=platform.mac_ver()[0].split('.');
-            print(v[0]+'.'+v[1])\")"
+            MACOSX_DEPLOYMENT_TARGET="$(cat /tmp/macos_deployment_target.txt)"
             SKBUILD_CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=/tmp/nanobind_prefix.cmake"
 
           CIBW_BUILD_VERBOSITY: 1
