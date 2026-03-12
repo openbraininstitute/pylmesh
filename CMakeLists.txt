@@ -24,7 +24,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Build options, set ON by default 
-option(BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_PYTHON "Build Python bindings" ON)
 option(ENABLE_GLTF "Enable GLTF/GLB support" ON)
 option(ENABLE_DRACO "Enable Draco compression for GLB" ON)
@@ -48,9 +47,4 @@ add_subdirectory(lmesh)
 # Build Python bindings
 if(BUILD_PYTHON)
     add_subdirectory(python)
-endif()
-
-# Build examples
-if(BUILD_EXAMPLES)
-    add_subdirectory(examples)
 endif()
