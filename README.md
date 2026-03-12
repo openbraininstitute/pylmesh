@@ -62,21 +62,31 @@ sudo dnf install libomp-devel
 ```
 
 ### Python Package
+
+**Core functionality only (no dependencies):**
+```bash
+pip install pylmesh
+```
+
+**With optional features:**
+```bash
+# Add trimesh support
+pip install pylmesh[trimesh]
+
+# Add batch conversion tools
+pip install pylmesh[batch]
+
+# Add development tools
+pip install pylmesh[dev]
+
+# Install everything
+pip install pylmesh[trimesh,batch,dev]
+```
+
+**From source:**
 ```bash
 pip install .
 ```
-
-With trimesh support:
-```bash
-pip install .[trimesh]
-```
-
-With development tools:
-```bash
-pip install .[dev]
-```
-
-Dependencies are automatically downloaded during build. No manual setup required!
 
 ### C++ Library
 ```bash

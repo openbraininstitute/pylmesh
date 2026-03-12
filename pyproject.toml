@@ -51,12 +51,18 @@ classifiers = [
     "Programming Language :: C++",
 ]
 keywords = ["mesh", "3d", "obj", "stl", "ply", "off", "gltf", "glb", "loader", "draco"]
-dependencies = [
+dependencies = []
+
+[project.optional-dependencies]
+trimesh = [
+    "trimesh>=3.9.0",
     "numpy>=1.19.0",
+]
+batch = [
     "joblib>=1.0.0",
     "tqdm>=4.60.0",
-    "trimesh>=3.9.0",
-    "pytest>=6.0",
+]
+dev = [
     "jupyter>=1.0.0",
     "matplotlib>=3.3.0",
     "plotly>=5.0.0",

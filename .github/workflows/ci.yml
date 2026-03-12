@@ -53,7 +53,7 @@ jobs:
       - name: Install Python package
         run: pip install .
 
-      - name: Install pytest
+      - name: Install test dependencies
         run: pip install pytest
 
       - name: Run tests
