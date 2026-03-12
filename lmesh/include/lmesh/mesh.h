@@ -62,6 +62,9 @@ class Mesh
 
     // Get faces as flat array [i1, i2, i3, i4, i5, i6, ...]
     std::vector<unsigned int> getFacesArray() const;
+
+    // Compute total surface area
+    double surfaceArea() const;
 };
 
 } // namespace pylmesh

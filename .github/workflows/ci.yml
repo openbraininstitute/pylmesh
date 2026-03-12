@@ -95,6 +95,15 @@ jobs:
             cmake --install .
             cd /tmp && rm -rf json
 
+            # Draco — build and install for GLB compression support
+            git clone --depth 1 --branch 1.5.7 https://github.com/google/draco.git
+            cd draco
+            mkdir build && cd build
+            cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDRACO_TESTS=OFF ..
+            cmake --build . --config Release -j$(nproc)
+            cmake --install .
+            cd /tmp && rm -rf draco
+
             # Refresh the dynamic linker cache after installing to /usr/local
             ldconfig
 

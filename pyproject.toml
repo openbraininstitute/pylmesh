@@ -89,6 +89,6 @@ skip = "cp39-* cp310-* cp311-* cp313-* cp314-* cp314t-* *musllinux*"
 build = "cp312-*"
 
 [tool.cibuildwheel.linux]
-before-all = "dnf update -y && dnf install -y cmake git pkg-config hdf5-devel gcc gcc-c++ && cd /tmp && git clone --depth 1 https://github.com/g-truc/glm.git && cp -r glm/glm /usr/local/include/ && rm -rf glm && git clone --depth 1 https://github.com/nlohmann/json.git && cd json && cmake -DCMAKE_INSTALL_PREFIX=/usr/local . && cmake --install . && cd /tmp && rm -rf json && ldconfig"
+before-all = "dnf update -y && dnf install -y cmake git pkg-config hdf5-devel gcc gcc-c++ && cd /tmp && git clone --depth 1 https://github.com/g-truc/glm.git && cp -r glm/glm /usr/local/include/ && rm -rf glm && git clone --depth 1 https://github.com/nlohmann/json.git && cd json && cmake -DCMAKE_INSTALL_PREFIX=/usr/local . && cmake --install . && cd /tmp && rm -rf json && git clone --depth 1 --branch 1.5.7 https://github.com/google/draco.git && cd draco && mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDRACO_TESTS=OFF .. && cmake --build . --config Release -j$(nproc) && cmake --install . && cd /tmp && rm -rf draco && ldconfig"
 environment = {CMAKE_PREFIX_PATH = "/usr/local:/usr", LD_LIBRARY_PATH = "/usr/local/lib:/usr/local/lib64"}
 repair-wheel-command = "LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LD_LIBRARY_PATH auditwheel repair -w {dest_dir} {wheel}"

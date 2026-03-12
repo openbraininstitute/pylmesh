@@ -62,7 +62,8 @@ NB_MODULE(_pylmesh, m)
         .def("vertex_count", &pylmesh::Mesh::vertexCount)
         .def("face_count", &pylmesh::Mesh::faceCount)
         .def("get_vertices_array", &pylmesh::Mesh::getVerticesArray)
-        .def("get_faces_array", &pylmesh::Mesh::getFacesArray);
+        .def("get_faces_array", &pylmesh::Mesh::getFacesArray)
+        .def("surface_area", &pylmesh::Mesh::surfaceArea);
 
     m.def(
         "load_mesh",

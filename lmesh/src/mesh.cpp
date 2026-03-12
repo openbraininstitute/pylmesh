@@ -18,6 +18,8 @@
  *****************************************************************************************/
 
 #include "lmesh/mesh.h"
+#include <cmath>
+#include <omp.h>
 
 namespace pylmesh
 {
@@ -70,5 +72,45 @@ std::vector<unsigned int> Mesh::getFacesArray() const
     }
     return result;
 }
+
+double Mesh::surfaceArea() const
+{
+    const int numThreads = omp_get_max_threads();
+    omp_set_num_threads(numThreads);
+    
+    double area = 0.0;
+    #pragma omp parallel for reduction(+:area)
+    for (size_t faceIdx = 0; faceIdx < faces.size(); ++faceIdx)
+    {
+        const auto& face = faces[faceIdx];
+        if (face.indices.size() < 3)
+            continue;
+
+        const auto& v0 = vertices[face.indices[0]];
+
+        for (size_t i = 1; i + 1 < face.indices.size(); ++i)
+        {
+            const auto& v1 = vertices[face.indices[i]];
+            const auto& v2 = vertices[face.indices[i + 1]];
+
+            double ax = static_cast<double>(v1.x) - v0.x;
+            double ay = static_cast<double>(v1.y) - v0.y;
+            double az = static_cast<double>(v1.z) - v0.z;
+
+            double bx = static_cast<double>(v2.x) - v0.x;
+            double by = static_cast<double>(v2.y) - v0.y;
+            double bz = static_cast<double>(v2.z) - v0.z;
+
+            double cx = ay * bz - az * by;
+            double cy = az * bx - ax * bz;
+            double cz = ax * by - ay * bx;
+
+            area += 0.5 * std::sqrt(cx * cx + cy * cy + cz * cz);
+        }
+    }
+    return area;
+}
+
+
 
 } // namespace pylmesh
