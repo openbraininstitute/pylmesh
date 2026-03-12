@@ -48,7 +48,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake git pkg-config libhdf5-dev g++
+          sudo apt-get install -y cmake git pkg-config libhdf5-dev libomp-dev g++
 
       - name: Install Python package
         run: pip install .
@@ -107,7 +107,7 @@ jobs:
 
             # HDF5 is not in the default manylinux repos; enable EPEL first
             dnf install -y epel-release
-            dnf install -y hdf5-devel
+            dnf install -y hdf5-devel libomp-devel
 
             # GLM is header-only; copy directly into the system include path
             cd /tmp

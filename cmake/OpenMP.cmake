@@ -27,12 +27,10 @@ if(ENABLE_OPENMP)
     if(OpenMP_CXX_FOUND)
         set(PYLMESH_USE_OPENMP TRUE)
         message(STATUS "Found OpenMP: ${OpenMP_CXX_VERSION}")
-        
-        # Modern CMake approach - no need to manually set flags
-        # OpenMP::OpenMP_CXX target handles everything
+        add_compile_definitions(PYLMESH_USE_OPENMP)
     else()
-        message(STATUS "OpenMP not found")
+        message(STATUS "OpenMP not found - using serial fallback")
     endif()
 else()
-    message(STATUS "OpenMP disabled")
+    message(STATUS "OpenMP disabled - using serial fallback")
 endif()

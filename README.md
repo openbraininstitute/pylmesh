@@ -44,6 +44,23 @@ if (pylmesh::MeshLoaderFactory::loadMesh("model.obj", mesh)) {
 
 ## Installation
 
+### System Requirements
+
+**macOS:**
+```bash
+brew install libomp
+```
+
+**Linux (Ubuntu/Debian):**
+```bash
+sudo apt-get install libomp-dev
+```
+
+**Linux (Fedora/RHEL):**
+```bash
+sudo dnf install libomp-devel
+```
+
 ### Python Package
 ```bash
 pip install .
