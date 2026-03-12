@@ -149,7 +149,21 @@ jobs:
         uses: actions/checkout@v4
 
       # ------------------------------------------------------------------ #
-      # 2. Build wheels (cibuildwheel)
+      # 2. Compute macOS deployment target
+      #    Runs on the GitHub Actions runner before cibuildwheel starts.
+      #    Exports MACOSX_DEPLOYMENT_TARGET into $GITHUB_ENV so it is
+      #    available as a plain env var in subsequent steps — avoiding any
+      #    $() subshell in CIBW_ENVIRONMENT which bashlex cannot parse.
+      # ------------------------------------------------------------------ #
+      - name: Set macOS deployment target
+        run: |
+          OS_VER=$(sw_vers -productVersion)
+          MAJOR=$(echo "$OS_VER" | cut -d. -f1)
+          MINOR=$(echo "$OS_VER" | cut -d. -f2)
+          echo "MACOSX_DEPLOYMENT_TARGET=${MAJOR}.${MINOR}" >> "$GITHUB_ENV"
+
+      # ------------------------------------------------------------------ #
+      # 3. Build wheels (cibuildwheel)
       #    Runs natively on the macOS runner (Apple Silicon / arm64).
       #    Dependencies are installed into ~/.local to avoid needing sudo.
       # ------------------------------------------------------------------ #
@@ -161,14 +175,6 @@ jobs:
 
           CIBW_BEFORE_ALL: |
             set -euxo pipefail
-
-            # Compute and persist the deployment target so CIBW_ENVIRONMENT
-            # can reference it via a simple $(cat ...) — bashlex cannot parse
-            # $() containing quotes, dots, or pipes inside the environment block.
-            OS_VER=$(sw_vers -productVersion)
-            MAJOR=$(echo "$OS_VER" | cut -d. -f1)
-            MINOR=$(echo "$OS_VER" | cut -d. -f2)
-            echo "${MAJOR}.${MINOR}" > /tmp/macos_deployment_target.txt
 
             # GLM — header-only
             cd /tmp
@@ -210,7 +216,7 @@ jobs:
 
           CIBW_ENVIRONMENT: >
             CMAKE_PREFIX_PATH="~/.local"
-            MACOSX_DEPLOYMENT_TARGET="$(cat /tmp/macos_deployment_target.txt)"
+            MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
             SKBUILD_CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=/tmp/nanobind_prefix.cmake"
 
           CIBW_BUILD_VERBOSITY: 1
