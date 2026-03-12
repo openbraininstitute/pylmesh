@@ -2,7 +2,14 @@
 """Test surface area calculation"""
 
 import pylmesh
-import math
+
+
+def test_empty_mesh():
+    """Test surface area of empty mesh"""
+    mesh = pylmesh.Mesh()
+    area = mesh.surface_area()
+    assert area == 0.0, f"Expected 0.0, got {area}"
+
 
 def test_triangle():
     """Test surface area of a single triangle"""
@@ -19,7 +26,7 @@ def test_triangle():
     area = mesh.surface_area()
     expected = 0.5
     assert abs(area - expected) < 1e-6, f"Expected {expected}, got {area}"
-    print(f"✓ Triangle test passed: area = {area}")
+
 
 def test_square():
     """Test surface area of a square (two triangles)"""
@@ -39,17 +46,3 @@ def test_square():
     area = mesh.surface_area()
     expected = 1.0
     assert abs(area - expected) < 1e-6, f"Expected {expected}, got {area}"
-    print(f"✓ Square test passed: area = {area}")
-
-def test_empty_mesh():
-    """Test surface area of empty mesh"""
-    mesh = pylmesh.Mesh()
-    area = mesh.surface_area()
-    assert area == 0.0, f"Expected 0.0, got {area}"
-    print(f"✓ Empty mesh test passed: area = {area}")
-
-if __name__ == "__main__":
-    test_empty_mesh()
-    test_triangle()
-    test_square()
-    print("\n✓ All surface area tests passed!")

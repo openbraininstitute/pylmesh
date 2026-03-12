@@ -24,8 +24,18 @@
 from ._pylmesh import Mesh, Vertex, Normal, TexCoord, Face, load_mesh, save_mesh
 from .trimesh_utils import to_trimesh
 from .batch_conversion_glb import batch_convert_to_glb
+from pathlib import Path
 
-__version__ = "1.0.0"
+try:
+    version_file = Path(__file__).parent.parent.parent / "pylmesh.version"
+    if version_file.exists():
+        __version__ = version_file.read_text().strip()
+    else:
+        import importlib.metadata
+        __version__ = importlib.metadata.version("pylmesh")
+except Exception:
+    __version__ = "0.0.0.dev"
+
 __all__ = ["Mesh", 
            "Vertex", 
            "Normal", 

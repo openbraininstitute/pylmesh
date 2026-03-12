@@ -22,6 +22,10 @@ mesh = pylmesh.load_mesh("model.obj")
 print(f"Vertices: {mesh.vertex_count()}")
 print(f"Faces: {mesh.face_count()}")
 
+# Compute surface area
+area = mesh.surface_area()
+print(f"Surface area: {area}")
+
 # Save mesh
 pylmesh.save_mesh("output.stl", mesh)
 ```
