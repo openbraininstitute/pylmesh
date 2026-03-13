@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/pylmesh-logo.jpeg" alt="pylmesh logo" width="400"/>
+  <img src="docs/images/pylmesh-logo.jpeg" alt="pylmesh logo" width="800"/>
 </p>
 
 # pylmesh
@@ -90,4 +90,6 @@ cmake ..
 make
 ```
 
-Copyright (c) 2025-2026 Open Brain Institute
+<p align="center">
+  Copyright (c) 2025-2026 Open Brain Institute
+</p>
