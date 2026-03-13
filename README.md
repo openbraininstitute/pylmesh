@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/pylmesh-logo.jpeg" alt="pylmesh logo" width="400"/>
+</p>
+
 # pylmesh
 
 pylmesh is a **l**ightweight **python** library for importing and exporting surface **mesh** files in multiple formats. 
@@ -86,4 +90,4 @@ cmake ..
 make
 ```
 
-All dependencies (tinygltf, nlohmann/json, stb, draco) are automatically downloaded.
+Copyright (c) 2025-2026 Open Brain Institute
