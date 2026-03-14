@@ -2,7 +2,7 @@
 # Copyright (c) 2026
 # Open Brain Institute <https://www.openbraininstitute.org/>
 #
-# For complete list of authors, please see AUTHORS.md
+# Author(s): Marwan Abdellah <marwan.abdellah@openbraininstitute.org>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,9 +35,6 @@ option(ENABLE_DRACO "Enable Draco compression for GLB" ON)
 
 # Add cmake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-
-# Add CMake customized modules
-set(CMAKE_MODULE_PATH  ${CMAKE_SOURCE_DIR}/cmake)
 include(OpenMP)
 include(GLM)
 include(nlohmann_json)

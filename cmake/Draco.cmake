@@ -2,7 +2,7 @@
 # Copyright (c) 2026
 # Open Brain Institute <https://www.openbraininstitute.org/>
 #
-# For complete list of authors, please see AUTHORS.md
+# Author(s): Marwan Abdellah <marwan.abdellah@openbraininstitute.org>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -62,14 +62,27 @@ if(NOT Draco_FOUND)
     set(DRACO_TESTS OFF CACHE BOOL "" FORCE)
     set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-    # Suppress Draco's CMP0148 warning
-    if(POLICY CMP0148)
-        cmake_policy(SET CMP0148 OLD)
-    endif()
+    # Suppress Draco's CMP0148 warning (FindPythonInterp/FindPythonLibs removed)
+    # CMAKE_POLICY_DEFAULT propagates into FetchContent subprojects unlike cmake_policy()
+    set(CMAKE_POLICY_DEFAULT_CMP0148 OLD CACHE STRING "" FORCE)
 
     FetchContent_MakeAvailable(draco)
 
-    if(TARGET draco::draco OR TARGET draco_static OR TARGET draco)
+    # Draco's FetchContent targets don't export include dirs properly;
+    # add the source include path so `#include "draco/..."` resolves.
+    # Use BUILD_INTERFACE to avoid CMake install-time validation errors.
+    # Draco's FetchContent targets don't export include dirs properly.
+    # Source headers are in draco-src/src/, generated headers (draco_features.h)
+    # are in ${CMAKE_BINARY_DIR}/. Both are needed for #include "draco/...".
+    set(_draco_inc
+        $<BUILD_INTERFACE:${draco_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
+    )
+    if(TARGET draco_static)
+        target_include_directories(draco_static PUBLIC ${_draco_inc})
+        set(Draco_FOUND TRUE)
+    elseif(TARGET draco)
+        target_include_directories(draco PUBLIC ${_draco_inc})
         set(Draco_FOUND TRUE)
     endif()
 endif()

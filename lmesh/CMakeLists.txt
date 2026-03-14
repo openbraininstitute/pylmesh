@@ -28,6 +28,11 @@ target_include_directories(lmesh
 if(PYLMESH_USE_OPENMP)
     if(TARGET OpenMP::OpenMP_CXX)
         target_link_libraries(lmesh PUBLIC OpenMP::OpenMP_CXX)
+    elseif(PYLMESH_OMP_LIBRARY)
+        # AppleClang / manual fallback path
+        target_include_directories(lmesh PUBLIC ${PYLMESH_OMP_INCLUDE_DIR})
+        target_compile_options(lmesh PUBLIC ${PYLMESH_OMP_COMPILE_OPTIONS})
+        target_link_libraries(lmesh PUBLIC ${PYLMESH_OMP_LIBRARY})
     endif()
 
     target_compile_definitions(lmesh PUBLIC PYLMESH_USE_OPENMP)
