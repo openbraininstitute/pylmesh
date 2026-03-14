@@ -36,7 +36,7 @@ else()
     # tinygltf is header-only; create an interface target with the include path
     if(NOT TARGET tinygltf)
         add_library(tinygltf INTERFACE)
-        target_include_directories(tinygltf INTERFACE ${tinygltf_SOURCE_DIR})
+        target_include_directories(tinygltf SYSTEM INTERFACE ${tinygltf_SOURCE_DIR})
     endif()
 
     set(PYLMESH_USE_TINYGLTF TRUE)

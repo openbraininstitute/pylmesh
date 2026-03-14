@@ -61,12 +61,25 @@ if(NOT Draco_FOUND)
     set(DRACO_TRANSCODER_SUPPORTED OFF CACHE BOOL "" FORCE)
     set(DRACO_TESTS OFF CACHE BOOL "" FORCE)
     set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+    set(DRACO_JS_GLUE OFF CACHE BOOL "" FORCE)
 
     # Suppress Draco's CMP0148 warning (FindPythonInterp/FindPythonLibs removed)
-    # CMAKE_POLICY_DEFAULT propagates into FetchContent subprojects unlike cmake_policy()
     set(CMAKE_POLICY_DEFAULT_CMP0148 OLD CACHE STRING "" FORCE)
 
-    FetchContent_MakeAvailable(draco)
+    # Use FetchContent_Populate + add_subdirectory(EXCLUDE_FROM_ALL) instead of
+    # FetchContent_MakeAvailable so Draco's standalone tools (draco_encoder,
+    # draco_decoder) are excluded from the default build. Those executables use
+    # GNU ld flags (--start-group/--end-group) that fail on macOS with LLVM Clang.
+    cmake_policy(PUSH)
+    cmake_policy(SET CMP0169 OLD)
+
+    FetchContent_GetProperties(draco)
+    if(NOT draco_POPULATED)
+        FetchContent_Populate(draco)
+        add_subdirectory(${draco_SOURCE_DIR} ${draco_BINARY_DIR} EXCLUDE_FROM_ALL)
+    endif()
+
+    cmake_policy(POP)
 
     # Draco's FetchContent targets don't export include dirs properly;
     # add the source include path so `#include "draco/..."` resolves.
