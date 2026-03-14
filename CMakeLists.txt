@@ -2,7 +2,7 @@
 # Copyright (c) 2026
 # Open Brain Institute <https://www.openbraininstitute.org/>
 #
-# For complete list of authors, please see AUTHORS.md
+# Author(s): Marwan Abdellah <marwan.abdellah@openbraininstitute.org>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,6 +23,11 @@ project(pylmesh VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Suppress Draco's use of deprecated FindPythonInterp/FindPythonLibs
+if(POLICY CMP0148)
+    cmake_policy(SET CMP0148 NEW)
+endif()
+
 # Build options, set ON by default 
 option(BUILD_PYTHON "Build Python bindings" ON)
 option(ENABLE_GLTF "Enable GLTF/GLB support" ON)
@@ -30,9 +35,6 @@ option(ENABLE_DRACO "Enable Draco compression for GLB" ON)
 
 # Add cmake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-
-# Add CMake customized modules
-set(CMAKE_MODULE_PATH  ${CMAKE_SOURCE_DIR}/cmake)
 include(OpenMP)
 include(GLM)
 include(nlohmann_json)

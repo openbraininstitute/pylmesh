@@ -2,7 +2,7 @@
 # Copyright (c) 2026
 # Open Brain Institute <https://www.openbraininstitute.org/>
 #
-# For complete list of authors, please see AUTHORS.md
+# Author(s): Marwan Abdellah <marwan.abdellah@openbraininstitute.org>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

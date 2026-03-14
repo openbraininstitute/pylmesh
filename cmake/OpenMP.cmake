@@ -2,7 +2,7 @@
 # Copyright (c) 2026
 # Open Brain Institute <https://www.openbraininstitute.org/>
 #
-# For complete list of authors, please see AUTHORS.md
+# Author(s): Marwan Abdellah <marwan.abdellah@openbraininstitute.org>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,16 +21,98 @@ option(ENABLE_OPENMP "Enable OpenMP support" ON)
 
 set(PYLMESH_USE_OPENMP FALSE)
 
-if(ENABLE_OPENMP)
-    find_package(OpenMP)
+if(NOT ENABLE_OPENMP)
+    message(STATUS "OpenMP disabled by user")
+    return()
+endif()
+
+include(CheckCXXCompilerFlag)
+
+# ---- macOS + AppleClang ------------------------------------------------------
+if(APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+
+    if(EXISTS "/opt/homebrew/opt/libomp")
+        set(OpenMP_ROOT "/opt/homebrew/opt/libomp")
+    elseif(EXISTS "/usr/local/opt/libomp")
+        set(OpenMP_ROOT "/usr/local/opt/libomp")
+    else()
+        message(FATAL_ERROR
+            "AppleClang detected, but libomp was not found.\n"
+            "Install it with: brew install libomp")
+    endif()
+
+    find_library(OPENMP_RUNTIME_LIBRARY
+        NAMES omp libomp
+        PATHS "${OpenMP_ROOT}/lib"
+        NO_DEFAULT_PATH
+    )
+
+    if(NOT OPENMP_RUNTIME_LIBRARY)
+        message(FATAL_ERROR "OpenMP runtime library not found under: ${OpenMP_ROOT}/lib")
+    endif()
+
+    # Store paths for target-level usage in lmesh (avoid polluting global scope)
+    set(PYLMESH_OMP_INCLUDE_DIR "${OpenMP_ROOT}/include" CACHE INTERNAL "")
+    set(PYLMESH_OMP_LIBRARY "${OPENMP_RUNTIME_LIBRARY}" CACHE INTERNAL "")
+    set(PYLMESH_OMP_COMPILE_OPTIONS "-Xpreprocessor;-fopenmp" CACHE INTERNAL "")
+
+    set(PYLMESH_USE_OPENMP TRUE)
+
+    message(STATUS "Using AppleClang + libomp from ${OpenMP_ROOT}")
+
+# ---- Other platforms ---------------------------------------------------------
+else()
+
+    find_package(OpenMP QUIET COMPONENTS CXX)
 
     if(OpenMP_CXX_FOUND)
         set(PYLMESH_USE_OPENMP TRUE)
-        message(STATUS "Found OpenMP: ${OpenMP_CXX_VERSION}")
-        add_compile_definitions(PYLMESH_USE_OPENMP)
+        message(STATUS "Found OpenMP via CMake")
+
     else()
-        message(STATUS "OpenMP not found - using serial fallback")
+
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+            check_cxx_compiler_flag("-fopenmp" COMPILER_SUPPORTS_FOPENMP)
+
+            if(COMPILER_SUPPORTS_FOPENMP)
+                set(PYLMESH_OMP_COMPILE_OPTIONS "-fopenmp" CACHE INTERNAL "")
+                set(PYLMESH_OMP_LIBRARY "-fopenmp" CACHE INTERNAL "")
+                set(PYLMESH_OMP_INCLUDE_DIR "" CACHE INTERNAL "")
+
+                set(PYLMESH_USE_OPENMP TRUE)
+
+                message(STATUS "Using manual GCC OpenMP fallback")
+
+            else()
+                message(FATAL_ERROR "GCC detected but OpenMP not supported")
+            endif()
+
+        elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+
+            check_cxx_compiler_flag("-fopenmp" COMPILER_SUPPORTS_FOPENMP)
+
+            if(COMPILER_SUPPORTS_FOPENMP)
+                set(PYLMESH_OMP_COMPILE_OPTIONS "-fopenmp" CACHE INTERNAL "")
+                set(PYLMESH_OMP_LIBRARY "-fopenmp" CACHE INTERNAL "")
+                set(PYLMESH_OMP_INCLUDE_DIR "" CACHE INTERNAL "")
+
+                set(PYLMESH_USE_OPENMP TRUE)
+
+                message(STATUS "Using manual Clang OpenMP fallback")
+
+            else()
+                message(FATAL_ERROR
+                    "Clang detected but OpenMP not found.\n"
+                    "Install libomp.")
+            endif()
+
+        else()
+
+            message(FATAL_ERROR
+                "OpenMP configuration failed for compiler: ${CMAKE_CXX_COMPILER_ID}")
+
+        endif()
+
     endif()
-else()
-    message(STATUS "OpenMP disabled - using serial fallback")
+
 endif()

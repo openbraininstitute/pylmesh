@@ -2,7 +2,7 @@
 # Copyright (c) 2026
 # Open Brain Institute <https://www.openbraininstitute.org/>
 #
-# For complete list of authors, please see AUTHORS.md
+# Author(s): Marwan Abdellah <marwan.abdellah@openbraininstitute.org>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,54 +21,88 @@ option(ENABLE_DRACO "Enable Draco compression support" ON)
 
 set(PYLMESH_USE_DRACO FALSE)
 
-if(ENABLE_DRACO)
-  # Prefer system package first
-  find_package(Draco CONFIG QUIET)
+if(NOT ENABLE_DRACO)
+    message(STATUS "Draco support disabled")
+    return()
+endif()
 
-  # Try pkg-config if CMake config not found
-  if(NOT Draco_FOUND)
+# Prefer system package first
+find_package(Draco CONFIG QUIET)
+
+# Try pkg-config if CMake package was not found
+if(NOT Draco_FOUND)
     find_package(PkgConfig QUIET)
+    
     if(PkgConfig_FOUND)
-      pkg_check_modules(DRACO QUIET draco)
-      if(DRACO_FOUND)
-        add_library(draco::draco INTERFACE IMPORTED)
-        target_include_directories(draco::draco INTERFACE ${DRACO_INCLUDE_DIRS})
-        target_link_libraries(draco::draco INTERFACE ${DRACO_LINK_LIBRARIES})
-        set(Draco_FOUND TRUE)
-      endif()
+        pkg_check_modules(DRACO QUIET draco)
+
+        if(DRACO_FOUND)
+            add_library(draco::draco INTERFACE IMPORTED)
+            target_include_directories(draco::draco INTERFACE ${DRACO_INCLUDE_DIRS})
+            target_link_libraries(draco::draco INTERFACE ${DRACO_LINK_LIBRARIES})
+            set(Draco_FOUND TRUE)
+        endif()
     endif()
-  endif()
+endif()
 
-  if(NOT Draco_FOUND)
+# Fallback: fetch Draco
+if(NOT Draco_FOUND)
     message(STATUS "Draco not found via find_package or pkg-config. Fetching with FetchContent.")
-
+  
     include(FetchContent)
+
     FetchContent_Declare(
-      draco
-      GIT_REPOSITORY https://github.com/google/draco.git
-      GIT_TAG        1.5.7
-      GIT_SHALLOW    TRUE
+        draco
+        GIT_REPOSITORY https://github.com/google/draco.git
+        GIT_TAG        1.5.7
+        GIT_SHALLOW    TRUE
     )
 
     set(DRACO_TRANSCODER_SUPPORTED OFF CACHE BOOL "" FORCE)
     set(DRACO_TESTS OFF CACHE BOOL "" FORCE)
     set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+    set(DRACO_JS_GLUE OFF CACHE BOOL "" FORCE)
 
-    FetchContent_MakeAvailable(draco)
-    
-    # FetchContent creates the draco target, mark as found
-  endif()
+    # Suppress Draco's CMP0148 warning (FindPythonInterp/FindPythonLibs removed)
+    set(CMAKE_POLICY_DEFAULT_CMP0148 OLD CACHE STRING "" FORCE)
 
-  # After either path, check for a usable target
-  if(Draco_FOUND)
+    # Use FetchContent_Populate + add_subdirectory(EXCLUDE_FROM_ALL) instead of
+    # FetchContent_MakeAvailable so Draco's standalone tools (draco_encoder,
+    # draco_decoder) are excluded from the default build. Those executables use
+    # GNU ld flags (--start-group/--end-group) that fail on macOS with LLVM Clang.
+    cmake_policy(PUSH)
+    cmake_policy(SET CMP0169 OLD)
+
+    FetchContent_GetProperties(draco)
+    if(NOT draco_POPULATED)
+        FetchContent_Populate(draco)
+        add_subdirectory(${draco_SOURCE_DIR} ${draco_BINARY_DIR} EXCLUDE_FROM_ALL)
+    endif()
+
+    cmake_policy(POP)
+
+    # Draco's FetchContent targets don't export include dirs properly;
+    # add the source include path so `#include "draco/..."` resolves.
+    # Use BUILD_INTERFACE to avoid CMake install-time validation errors.
+    # Draco's FetchContent targets don't export include dirs properly.
+    # Source headers are in draco-src/src/, generated headers (draco_features.h)
+    # are in ${CMAKE_BINARY_DIR}/. Both are needed for #include "draco/...".
+    set(_draco_inc
+        $<BUILD_INTERFACE:${draco_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
+    )
+    if(TARGET draco_static)
+        target_include_directories(draco_static PUBLIC ${_draco_inc})
+        set(Draco_FOUND TRUE)
+    elseif(TARGET draco)
+        target_include_directories(draco PUBLIC ${_draco_inc})
+        set(Draco_FOUND TRUE)
+    endif()
+endif()
+
+if(Draco_FOUND)
     set(PYLMESH_USE_DRACO TRUE)
-    if(VERBOSE)
-        message(STATUS "Found Draco. ${Draco_DIR}")
-    else(VERBOSE)
-        message(STATUS "Found Draco")
-    endif(VERBOSE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPYLMESH_USE_DRACO")
-  else()
+    message(STATUS "Found Draco")
+else()
     message(WARNING "Draco was requested, but could not be found or built. Draco disabled.")
-  endif()
 endif()

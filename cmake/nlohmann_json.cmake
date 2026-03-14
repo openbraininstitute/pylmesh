@@ -2,7 +2,7 @@
 # Copyright (c) 2026
 # Open Brain Institute <https://www.openbraininstitute.org/>
 #
-# For complete list of authors, please see AUTHORS.md
+# Author(s): Marwan Abdellah <marwan.abdellah@openbraininstitute.org>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,14 +34,15 @@ if(ENABLE_JSON)
             HINTS
                 /usr/include
                 /usr/local/include
+                /opt/homebrew/include
         )
 
         if(NLOHMANN_JSON_INCLUDE_DIR)
             set(PYLMESH_USE_JSON TRUE)
             message(STATUS "Found nlohmann_json at: ${NLOHMANN_JSON_INCLUDE_DIR}")
             
-            add_library(nlohmann_json INTERFACE IMPORTED)
-            target_include_directories(nlohmann_json INTERFACE ${NLOHMANN_JSON_INCLUDE_DIR})
+            add_library(nlohmann_json::nlohmann_json INTERFACE IMPORTED)
+            target_include_directories(nlohmann_json::nlohmann_json INTERFACE ${NLOHMANN_JSON_INCLUDE_DIR})
         else()
             message(STATUS "nlohmann_json not found")
         endif()
