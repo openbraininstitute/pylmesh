@@ -23,6 +23,11 @@ project(pylmesh VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Suppress Draco's use of deprecated FindPythonInterp/FindPythonLibs
+if(POLICY CMP0148)
+    cmake_policy(SET CMP0148 NEW)
+endif()
+
 # Build options, set ON by default 
 option(BUILD_PYTHON "Build Python bindings" ON)
 option(ENABLE_GLTF "Enable GLTF/GLB support" ON)

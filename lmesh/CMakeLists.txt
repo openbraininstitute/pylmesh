@@ -26,10 +26,12 @@ target_include_directories(lmesh
 
 # Link all dependencies
 if(PYLMESH_USE_OPENMP)
-    target_link_libraries(lmesh PUBLIC OpenMP::OpenMP_CXX)
+    if(TARGET OpenMP::OpenMP_CXX)
+        target_link_libraries(lmesh PUBLIC OpenMP::OpenMP_CXX)
+    endif()
+
     target_compile_definitions(lmesh PUBLIC PYLMESH_USE_OPENMP)
 endif()
-
 if(PYLMESH_USE_GLM)
     target_link_libraries(lmesh PUBLIC glm)
     target_compile_definitions(lmesh PUBLIC PYLMESH_USE_GLM)
@@ -52,10 +54,13 @@ if(PYLMESH_USE_TINYGLTF)
 endif()
 
 if(PYLMESH_USE_DRACO)
-    if(TARGET draco)
-        target_link_libraries(lmesh PUBLIC draco)
-    elseif(TARGET draco::draco)
+    if(TARGET draco::draco)
         target_link_libraries(lmesh PUBLIC draco::draco)
+    elseif(TARGET draco_static)
+        target_link_libraries(lmesh PUBLIC draco_static)
+    elseif(TARGET draco)
+        target_link_libraries(lmesh PUBLIC draco)
     endif()
+
     target_compile_definitions(lmesh PUBLIC PYLMESH_USE_DRACO)
 endif()
