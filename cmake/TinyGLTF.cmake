@@ -23,15 +23,19 @@ else()
         GIT_SHALLOW TRUE
     )
 
-    cmake_policy(PUSH)
-    cmake_policy(SET CMP0169 OLD)
+    if(POLICY CMP0169)
+        cmake_policy(PUSH)
+        cmake_policy(SET CMP0169 OLD)
+    endif()
 
     FetchContent_GetProperties(tinygltf)
     if(NOT tinygltf_POPULATED)
         FetchContent_Populate(tinygltf)
     endif()
 
-    cmake_policy(POP)
+    if(POLICY CMP0169)
+        cmake_policy(POP)
+    endif()
 
     # tinygltf is header-only; create an interface target with the include path
     if(NOT TARGET tinygltf)

@@ -31,48 +31,105 @@ bool OBJLoader::canLoad(const std::string& filepath) const
 
 bool OBJLoader::load(const std::string& filepath, Mesh& mesh)
 {
-    std::ifstream file(filepath);
-    if (!file.is_open())
+    std::ifstream file(filepath, std::ios::binary | std::ios::ate);
+    if (!file)
         return false;
 
+    size_t size = file.tellg();
+    file.seekg(0);
+
+    std::string buffer(size, '\0');
+    file.read(buffer.data(), size);
+
     mesh.clear();
-    std::string line;
 
-    while (std::getline(file, line))
+    // Optional but VERY important for performance
+    mesh.vertices.reserve(size / 30);   // heuristic
+    mesh.faces.reserve(size / 60);
+    // mesh.normals.reserve(size / 50);
+    // mesh.texcoords.reserve(size / 50);
+
+    const char* ptr = buffer.data();
+    const char* end = ptr + buffer.size();
+
+    auto parseFloat = [](const char*& p) -> float {
+        return std::strtof(p, (char**)&p);
+    };
+
+    auto skipSpaces = [](const char*& p) {
+        while (*p == ' ' || *p == '\t') ++p;
+    };
+
+    auto parseInt = [](const char*& p) -> int {
+        int val = 0;
+        while (*p >= '0' && *p <= '9') {
+            val = val * 10 + (*p - '0');
+            ++p;
+        }
+        return val;
+    };
+
+    while (ptr < end)
     {
-        std::istringstream iss(line);
-        std::string prefix;
-        iss >> prefix;
+        if (*ptr == '\n' || *ptr == '\r') { ++ptr; continue; }
 
-        if (prefix == "v")
+        if (ptr[0] == 'v' && ptr[1] == ' ')
         {
+            ptr += 2;
             Vertex v;
-            iss >> v.x >> v.y >> v.z;
+            v.x = parseFloat(ptr); skipSpaces(ptr);
+            v.y = parseFloat(ptr); skipSpaces(ptr);
+            v.z = parseFloat(ptr);
             mesh.vertices.push_back(v);
         }
-        else if (prefix == "vn")
+        else if (ptr[0] == 'v' && ptr[1] == 'n')
         {
+            ptr += 3;
             Normal n;
-            iss >> n.nx >> n.ny >> n.nz;
+            n.nx = parseFloat(ptr); skipSpaces(ptr);
+            n.ny = parseFloat(ptr); skipSpaces(ptr);
+            n.nz = parseFloat(ptr);
             mesh.normals.push_back(n);
         }
-        else if (prefix == "vt")
+        else if (ptr[0] == 'v' && ptr[1] == 't')
         {
+            ptr += 3;
             TexCoord t;
-            iss >> t.u >> t.v;
+            t.u = parseFloat(ptr); skipSpaces(ptr);
+            t.v = parseFloat(ptr);
             mesh.texcoords.push_back(t);
         }
-        else if (prefix == "f")
+        else if (ptr[0] == 'f')
         {
+            ptr += 2;
+
             Face f;
-            std::string vertex;
-            while (iss >> vertex)
+
+            while (ptr < end && *ptr != '\n')
             {
-                unsigned int idx = std::stoi(vertex.substr(0, vertex.find('/'))) - 1;
-                f.indices.push_back(idx);
+                skipSpaces(ptr);
+
+                // parse index before '/'
+                int idx = parseInt(ptr);
+
+                // skip rest of vertex definition ("/uv/normals")
+                while (*ptr != ' ' && *ptr != '\n' && *ptr != '\r' && ptr < end)
+                    ++ptr;
+
+                f.indices.push_back(idx - 1);
             }
+
             mesh.faces.push_back(f);
         }
+        else
+        {
+            // skip unknown line
+            while (ptr < end && *ptr != '\n') ++ptr;
+        }
+
+        // move to next line
+        while (ptr < end && *ptr != '\n') ++ptr;
+        ++ptr;
     }
 
     return !mesh.isEmpty();

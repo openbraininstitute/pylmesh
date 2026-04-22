@@ -20,6 +20,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <cstdint>
 
 namespace pylmesh
 {
@@ -41,7 +42,7 @@ struct TexCoord
 
 struct Face
 {
-    std::vector<unsigned int> indices;
+    std::vector<uint32_t> indices;
 };
 
 class Mesh
