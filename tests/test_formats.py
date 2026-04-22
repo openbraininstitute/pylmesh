@@ -7,17 +7,19 @@ import tempfile
 import os
 
 
-def test_obj_format():
-    """Test OBJ format import/export"""
+def _make_triangle_mesh():
     mesh = pylmesh.Mesh()
     mesh.vertices = [pylmesh.Vertex(), pylmesh.Vertex(), pylmesh.Vertex()]
     mesh.vertices[0].x, mesh.vertices[0].y, mesh.vertices[0].z = 0.0, 0.0, 0.0
     mesh.vertices[1].x, mesh.vertices[1].y, mesh.vertices[1].z = 1.0, 0.0, 0.0
     mesh.vertices[2].x, mesh.vertices[2].y, mesh.vertices[2].z = 0.5, 1.0, 0.0
-    
-    face = pylmesh.Face()
-    face.indices = [0, 1, 2]
-    mesh.faces = [face]
+    mesh.add_face([0, 1, 2])
+    return mesh
+
+
+def test_obj_format():
+    """Test OBJ format import/export"""
+    mesh = _make_triangle_mesh()
     
     with tempfile.TemporaryDirectory() as tmpdir:
         filepath = os.path.join(tmpdir, "test.obj")
@@ -30,15 +32,7 @@ def test_obj_format():
 
 def test_stl_format():
     """Test STL format import/export"""
-    mesh = pylmesh.Mesh()
-    mesh.vertices = [pylmesh.Vertex(), pylmesh.Vertex(), pylmesh.Vertex()]
-    mesh.vertices[0].x, mesh.vertices[0].y, mesh.vertices[0].z = 0.0, 0.0, 0.0
-    mesh.vertices[1].x, mesh.vertices[1].y, mesh.vertices[1].z = 1.0, 0.0, 0.0
-    mesh.vertices[2].x, mesh.vertices[2].y, mesh.vertices[2].z = 0.5, 1.0, 0.0
-    
-    face = pylmesh.Face()
-    face.indices = [0, 1, 2]
-    mesh.faces = [face]
+    mesh = _make_triangle_mesh()
     
     with tempfile.TemporaryDirectory() as tmpdir:
         filepath = os.path.join(tmpdir, "test.stl")
@@ -51,15 +45,7 @@ def test_stl_format():
 
 def test_ply_format():
     """Test PLY format import/export"""
-    mesh = pylmesh.Mesh()
-    mesh.vertices = [pylmesh.Vertex(), pylmesh.Vertex(), pylmesh.Vertex()]
-    mesh.vertices[0].x, mesh.vertices[0].y, mesh.vertices[0].z = 0.0, 0.0, 0.0
-    mesh.vertices[1].x, mesh.vertices[1].y, mesh.vertices[1].z = 1.0, 0.0, 0.0
-    mesh.vertices[2].x, mesh.vertices[2].y, mesh.vertices[2].z = 0.5, 1.0, 0.0
-    
-    face = pylmesh.Face()
-    face.indices = [0, 1, 2]
-    mesh.faces = [face]
+    mesh = _make_triangle_mesh()
     
     with tempfile.TemporaryDirectory() as tmpdir:
         filepath = os.path.join(tmpdir, "test.ply")
@@ -72,15 +58,7 @@ def test_ply_format():
 
 def test_off_format():
     """Test OFF format import/export"""
-    mesh = pylmesh.Mesh()
-    mesh.vertices = [pylmesh.Vertex(), pylmesh.Vertex(), pylmesh.Vertex()]
-    mesh.vertices[0].x, mesh.vertices[0].y, mesh.vertices[0].z = 0.0, 0.0, 0.0
-    mesh.vertices[1].x, mesh.vertices[1].y, mesh.vertices[1].z = 1.0, 0.0, 0.0
-    mesh.vertices[2].x, mesh.vertices[2].y, mesh.vertices[2].z = 0.5, 1.0, 0.0
-    
-    face = pylmesh.Face()
-    face.indices = [0, 1, 2]
-    mesh.faces = [face]
+    mesh = _make_triangle_mesh()
     
     with tempfile.TemporaryDirectory() as tmpdir:
         filepath = os.path.join(tmpdir, "test.off")

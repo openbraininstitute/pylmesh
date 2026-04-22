@@ -36,15 +36,17 @@ bool STLExporter::save(const std::string& filepath, const Mesh& mesh)
 
     file << "solid mesh\n";
 
-    for (const auto& face : mesh.faces)
+    for (size_t fi = 0; fi < mesh.faceCount(); ++fi)
     {
-        if (face.indices.size() >= 3)
+        const uint32_t* idx = mesh.faceIndices(fi);
+        const uint32_t n = mesh.faceSize(fi);
+        if (n >= 3)
         {
             file << "  facet normal 0 0 0\n";
             file << "    outer loop\n";
             for (size_t i = 0; i < 3; ++i)
             {
-                const auto& v = mesh.vertices[face.indices[i]];
+                const auto& v = mesh.vertices[idx[i]];
                 file << "      vertex " << v.x << " " << v.y << " " << v.z << "\n";
             }
             file << "    endloop\n";

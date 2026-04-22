@@ -69,15 +69,8 @@ bool GLTFExporter::save(const std::string& filepath, const Mesh& mesh)
         pMax[2] = std::max(pMax[2], v.z);
     }
 
-    // Pack indices
-    std::vector<uint32_t> indices;
-    for (const auto& f : mesh.faces)
-    {
-        for (auto idx : f.indices)
-        {
-            indices.push_back(idx);
-        }
-    }
+    // Indices are already flat
+    const auto& indices = mesh.indices;
 
     // Create buffer
     size_t posSize = positions.size() * sizeof(float);
@@ -164,7 +157,7 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh)
     // Create Draco mesh
     draco::Mesh dracoMesh;
     dracoMesh.set_num_points(mesh.vertices.size());
-    dracoMesh.SetNumFaces(mesh.faces.size());
+    dracoMesh.SetNumFaces(mesh.faceCount());
 
     // Add position attribute
     draco::GeometryAttribute posAttr;
@@ -191,14 +184,15 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh)
     }
 
     // Set faces
-    for (size_t i = 0; i < mesh.faces.size(); ++i)
+    for (size_t i = 0; i < mesh.faceCount(); ++i)
     {
-        if (mesh.faces[i].indices.size() >= 3)
+        const uint32_t* idx = mesh.faceIndices(i);
+        if (mesh.faceSize(i) >= 3)
         {
             draco::Mesh::Face face;
-            face[0] = mesh.faces[i].indices[0];
-            face[1] = mesh.faces[i].indices[1];
-            face[2] = mesh.faces[i].indices[2];
+            face[0] = idx[0];
+            face[1] = idx[1];
+            face[2] = idx[2];
             dracoMesh.SetFace(draco::FaceIndex(i), face);
         }
     }
@@ -246,7 +240,7 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh)
     // Placeholder index accessor
     tinygltf::Accessor idxAccessor;
     idxAccessor.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
-    idxAccessor.count = mesh.faces.size() * 3;
+    idxAccessor.count = mesh.indices.size();
     idxAccessor.type = TINYGLTF_TYPE_SCALAR;
     idxAccessor.bufferView = -1;
     primitive.indices = 1;
@@ -301,15 +295,8 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh)
         pMax[2] = std::max(pMax[2], v.z);
     }
 
-    // Pack indices
-    std::vector<uint32_t> indices;
-    for (const auto& f : mesh.faces)
-    {
-        for (auto idx : f.indices)
-        {
-            indices.push_back(idx);
-        }
-    }
+    // Indices are already flat
+    const auto& indices = mesh.indices;
 
     // Create buffer
     size_t posSize = positions.size() * sizeof(float);

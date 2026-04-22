@@ -35,19 +35,21 @@ bool OFFExporter::save(const std::string& filepath, const Mesh& mesh)
         return false;
 
     file << "OFF\n";
-    file << mesh.vertices.size() << " " << mesh.faces.size() << " 0\n";
+    file << mesh.vertices.size() << " " << mesh.faceCount() << " 0\n";
 
     for (const auto& v : mesh.vertices)
     {
         file << v.x << " " << v.y << " " << v.z << "\n";
     }
 
-    for (const auto& f : mesh.faces)
+    for (size_t fi = 0; fi < mesh.faceCount(); ++fi)
     {
-        file << f.indices.size();
-        for (auto idx : f.indices)
+        const uint32_t* idx = mesh.faceIndices(fi);
+        const uint32_t n = mesh.faceSize(fi);
+        file << n;
+        for (uint32_t i = 0; i < n; ++i)
         {
-            file << " " << idx;
+            file << " " << idx[i];
         }
         file << "\n";
     }

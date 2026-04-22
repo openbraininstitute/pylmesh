@@ -18,9 +18,11 @@
  *****************************************************************************************/
 
 #pragma once
+#include <cassert>
+#include <cstdint>
+#include <initializer_list>
 #include <string>
 #include <vector>
-#include <cstdint>
 
 namespace pylmesh
 {
@@ -40,23 +42,37 @@ struct TexCoord
     float u, v;
 };
 
-struct Face
-{
-    std::vector<uint32_t> indices;
-};
-
 class Mesh
 {
   public:
     std::vector<Vertex> vertices;
     std::vector<Normal> normals;
     std::vector<TexCoord> texcoords;
-    std::vector<Face> faces;
+
+    // Flat index buffer: [i0, i1, i2,  i0, i1, i2, i3,  ...]
+    std::vector<uint32_t> indices;
+
+    // faceOffsets[f] = start of face f in indices[]
+    // faceOffsets[f+1] - faceOffsets[f] = vertex count of face f
+    // size = faceCount + 1
+    std::vector<uint32_t> faceOffsets;
 
     void clear();
     bool isEmpty() const;
     size_t vertexCount() const;
     size_t faceCount() const;
+
+    // Number of indices for face f
+    uint32_t faceSize(size_t f) const;
+
+    // Pointer to the first index of face f
+    const uint32_t* faceIndices(size_t f) const;
+
+    // Add a face from a pointer + count
+    void addFace(const uint32_t* idx, size_t count);
+
+    // Add a face from an initializer list
+    void addFace(std::initializer_list<uint32_t> idx);
 
     // Get vertices as flat array [x1, y1, z1, x2, y2, z2, ...]
     std::vector<float> getVerticesArray() const;

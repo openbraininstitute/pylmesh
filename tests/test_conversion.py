@@ -13,9 +13,7 @@ def sample_mesh():
     mesh.vertices[1].x, mesh.vertices[1].y, mesh.vertices[1].z = 1.0, 0.0, 0.0
     mesh.vertices[2].x, mesh.vertices[2].y, mesh.vertices[2].z = 0.5, 1.0, 0.0
     
-    face = pylmesh.Face()
-    face.indices = [0, 1, 2]
-    mesh.faces = [face]
+    mesh.add_face([0, 1, 2])
     
     return mesh
 

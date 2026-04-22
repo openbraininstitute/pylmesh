@@ -122,11 +122,11 @@ bool GLTFLoader::load(const std::string& filepath, Mesh& mesh)
                                 for (draco::FaceIndex i(0); i < dracoMesh->num_faces(); ++i)
                                 {
                                     const draco::Mesh::Face& face = dracoMesh->face(i);
-                                    Face f;
-                                    f.indices.push_back(vertexOffset + face[0].value());
-                                    f.indices.push_back(vertexOffset + face[1].value());
-                                    f.indices.push_back(vertexOffset + face[2].value());
-                                    mesh.faces.push_back(f);
+                                    uint32_t idx[3] = {
+                                        static_cast<uint32_t>(vertexOffset + face[0].value()),
+                                        static_cast<uint32_t>(vertexOffset + face[1].value()),
+                                        static_cast<uint32_t>(vertexOffset + face[2].value())};
+                                    mesh.addFace(idx, 3);
                                 }
 
                                 continue;
@@ -186,7 +186,7 @@ bool GLTFLoader::load(const std::string& filepath, Mesh& mesh)
                         if (i + 2 >= accessor.count)
                             break;
 
-                        Face f;
+                        uint32_t tri[3];
                         for (int j = 0; j < 3; ++j)
                         {
                             uint32_t idx;
@@ -196,9 +196,9 @@ bool GLTFLoader::load(const std::string& filepath, Mesh& mesh)
                                 idx = reinterpret_cast<const uint32_t*>(data)[i + j];
                             else
                                 idx = data[i + j];
-                            f.indices.push_back(vertexOffset + idx);
+                            tri[j] = static_cast<uint32_t>(vertexOffset + idx);
                         }
-                        mesh.faces.push_back(f);
+                        mesh.addFace(tri, 3);
                     }
                 }
             }

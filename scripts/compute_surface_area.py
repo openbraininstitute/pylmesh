@@ -53,9 +53,7 @@ triangle_mesh.vertices[0].x, triangle_mesh.vertices[0].y, triangle_mesh.vertices
 triangle_mesh.vertices[1].x, triangle_mesh.vertices[1].y, triangle_mesh.vertices[1].z = 1.0, 0.0, 0.0
 triangle_mesh.vertices[2].x, triangle_mesh.vertices[2].y, triangle_mesh.vertices[2].z = 0.0, 1.0, 0.0
 
-face = pylmesh.Face()
-face.indices = [0, 1, 2]
-triangle_mesh.faces = [face]
+triangle_mesh.add_face([0, 1, 2])
 
 area = triangle_mesh.surface_area()
 print(f"Triangle area: {area:.6f} (expected: 0.5)")
@@ -91,11 +89,8 @@ faces_data = [
     [1, 2, 6], [1, 6, 5]   # right (x=1)
 ]
 
-cube_mesh.faces = []
 for indices in faces_data:
-    face = pylmesh.Face()
-    face.indices = indices
-    cube_mesh.faces.append(face)
+    cube_mesh.add_face(indices)
 
 area = cube_mesh.surface_area()
 print(f"Cube surface area: {area:.6f} (expected: 6.0)")

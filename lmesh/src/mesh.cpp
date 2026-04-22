@@ -32,7 +32,8 @@ void Mesh::clear()
     vertices.clear();
     normals.clear();
     texcoords.clear();
-    faces.clear();
+    indices.clear();
+    faceOffsets.clear();
 }
 
 bool Mesh::isEmpty() const
@@ -47,7 +48,32 @@ size_t Mesh::vertexCount() const
 
 size_t Mesh::faceCount() const
 {
-    return faces.size();
+    return faceOffsets.empty() ? 0 : faceOffsets.size() - 1;
+}
+
+uint32_t Mesh::faceSize(size_t f) const
+{
+    assert(f < faceCount());
+    return faceOffsets[f + 1] - faceOffsets[f];
+}
+
+const uint32_t* Mesh::faceIndices(size_t f) const
+{
+    assert(f < faceCount());
+    return indices.data() + faceOffsets[f];
+}
+
+void Mesh::addFace(const uint32_t* idx, size_t count)
+{
+    if (faceOffsets.empty())
+        faceOffsets.push_back(0);
+    indices.insert(indices.end(), idx, idx + count);
+    faceOffsets.push_back(static_cast<uint32_t>(indices.size()));
+}
+
+void Mesh::addFace(std::initializer_list<uint32_t> idx)
+{
+    addFace(idx.begin(), idx.size());
 }
 
 std::vector<float> Mesh::getVerticesArray() const
@@ -65,37 +91,29 @@ std::vector<float> Mesh::getVerticesArray() const
 
 std::vector<unsigned int> Mesh::getFacesArray() const
 {
-    std::vector<unsigned int> result;
-    for (const auto& f : faces)
-    {
-        for (auto idx : f.indices)
-        {
-            result.push_back(idx);
-        }
-    }
-    return result;
+    return {indices.begin(), indices.end()};
 }
 
 double Mesh::surfaceArea() const
 {
+    const size_t nFaces = faceCount();
+
 #ifdef PYLMESH_USE_OPENMP
-    const int numThreads = omp_get_max_threads();
-    omp_set_num_threads(numThreads);
-    
     double area = 0.0;
     #pragma omp parallel for reduction(+:area)
-    for (size_t faceIdx = 0; faceIdx < faces.size(); ++faceIdx)
+    for (size_t faceIdx = 0; faceIdx < nFaces; ++faceIdx)
     {
-        const auto& face = faces[faceIdx];
-        if (face.indices.size() < 3)
+        const uint32_t* idx = faceIndices(faceIdx);
+        const uint32_t n = faceSize(faceIdx);
+        if (n < 3)
             continue;
 
-        const auto& v0 = vertices[face.indices[0]];
+        const auto& v0 = vertices[idx[0]];
 
-        for (size_t i = 1; i + 1 < face.indices.size(); ++i)
+        for (uint32_t i = 1; i + 1 < n; ++i)
         {
-            const auto& v1 = vertices[face.indices[i]];
-            const auto& v2 = vertices[face.indices[i + 1]];
+            const auto& v1 = vertices[idx[i]];
+            const auto& v2 = vertices[idx[i + 1]];
 
             double ax = static_cast<double>(v1.x) - v0.x;
             double ay = static_cast<double>(v1.y) - v0.y;
@@ -113,19 +131,20 @@ double Mesh::surfaceArea() const
         }
     }
 #else
-    // Serial fallback when OpenMP is not available
     double area = 0.0;
-    for (const auto& face : faces)
+    for (size_t faceIdx = 0; faceIdx < nFaces; ++faceIdx)
     {
-        if (face.indices.size() < 3)
+        const uint32_t* idx = faceIndices(faceIdx);
+        const uint32_t n = faceSize(faceIdx);
+        if (n < 3)
             continue;
 
-        const auto& v0 = vertices[face.indices[0]];
+        const auto& v0 = vertices[idx[0]];
 
-        for (size_t i = 1; i + 1 < face.indices.size(); ++i)
+        for (uint32_t i = 1; i + 1 < n; ++i)
         {
-            const auto& v1 = vertices[face.indices[i]];
-            const auto& v2 = vertices[face.indices[i + 1]];
+            const auto& v1 = vertices[idx[i]];
+            const auto& v2 = vertices[idx[i + 1]];
 
             double ax = static_cast<double>(v1.x) - v0.x;
             double ay = static_cast<double>(v1.y) - v0.y;

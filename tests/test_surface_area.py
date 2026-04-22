@@ -19,9 +19,7 @@ def test_triangle():
     mesh.vertices[1].x, mesh.vertices[1].y, mesh.vertices[1].z = 1.0, 0.0, 0.0
     mesh.vertices[2].x, mesh.vertices[2].y, mesh.vertices[2].z = 0.0, 1.0, 0.0
     
-    face = pylmesh.Face()
-    face.indices = [0, 1, 2]
-    mesh.faces = [face]
+    mesh.add_face([0, 1, 2])
     
     area = mesh.surface_area()
     expected = 0.5
@@ -37,11 +35,8 @@ def test_square():
     mesh.vertices[2].x, mesh.vertices[2].y, mesh.vertices[2].z = 1.0, 1.0, 0.0
     mesh.vertices[3].x, mesh.vertices[3].y, mesh.vertices[3].z = 0.0, 1.0, 0.0
     
-    face1 = pylmesh.Face()
-    face1.indices = [0, 1, 2]
-    face2 = pylmesh.Face()
-    face2.indices = [0, 2, 3]
-    mesh.faces = [face1, face2]
+    mesh.add_face([0, 1, 2])
+    mesh.add_face([0, 2, 3])
     
     area = mesh.surface_area()
     expected = 1.0

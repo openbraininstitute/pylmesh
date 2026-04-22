@@ -35,12 +35,10 @@ def test_mesh_faces():
     mesh = pylmesh.Mesh()
     mesh.vertices = [pylmesh.Vertex() for _ in range(3)]
     
-    face = pylmesh.Face()
-    face.indices = [0, 1, 2]
-    mesh.faces = [face]
+    mesh.add_face([0, 1, 2])
     
     assert mesh.face_count() == 1
-    assert mesh.faces[0].indices == [0, 1, 2]
+    assert mesh.get_face_indices(0) == [0, 1, 2]
 
 
 def test_mesh_clear():
@@ -78,13 +76,8 @@ def test_get_faces_array():
     mesh = pylmesh.Mesh()
     mesh.vertices = [pylmesh.Vertex() for _ in range(6)]
     
-    f1 = pylmesh.Face()
-    f1.indices = [0, 1, 2]
-    
-    f2 = pylmesh.Face()
-    f2.indices = [3, 4, 5]
-    
-    mesh.faces = [f1, f2]
+    mesh.add_face([0, 1, 2])
+    mesh.add_face([3, 4, 5])
     
     arr = mesh.get_faces_array()
     assert len(arr) == 6

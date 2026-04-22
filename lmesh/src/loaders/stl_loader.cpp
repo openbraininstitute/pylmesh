@@ -54,9 +54,8 @@ bool STLLoader::load(const std::string& filepath, Mesh& mesh)
 
     for (size_t i = 0; i < mesh.vertices.size(); i += 3)
     {
-        Face f;
-        f.indices = {(unsigned int)i, (unsigned int)i + 1, (unsigned int)i + 2};
-        mesh.faces.push_back(f);
+        uint32_t idx[3] = {(uint32_t)i, (uint32_t)i + 1, (uint32_t)i + 2};
+        mesh.addFace(idx, 3);
     }
 
     return !mesh.isEmpty();

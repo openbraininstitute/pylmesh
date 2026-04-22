@@ -47,23 +47,33 @@ NB_MODULE(_pylmesh, m)
         .def_rw("u", &pylmesh::TexCoord::u)
         .def_rw("v", &pylmesh::TexCoord::v);
 
-    nb::class_<pylmesh::Face>(m, "Face")
-        .def(nb::init<>())
-        .def_rw("indices", &pylmesh::Face::indices);
-
     nb::class_<pylmesh::Mesh>(m, "Mesh")
         .def(nb::init<>())
         .def_rw("vertices", &pylmesh::Mesh::vertices)
         .def_rw("normals", &pylmesh::Mesh::normals)
         .def_rw("texcoords", &pylmesh::Mesh::texcoords)
-        .def_rw("faces", &pylmesh::Mesh::faces)
+        .def_rw("indices", &pylmesh::Mesh::indices)
+        .def_rw("face_offsets", &pylmesh::Mesh::faceOffsets)
         .def("clear", &pylmesh::Mesh::clear)
         .def("is_empty", &pylmesh::Mesh::isEmpty)
         .def("vertex_count", &pylmesh::Mesh::vertexCount)
         .def("face_count", &pylmesh::Mesh::faceCount)
         .def("get_vertices_array", &pylmesh::Mesh::getVerticesArray)
         .def("get_faces_array", &pylmesh::Mesh::getFacesArray)
-        .def("surface_area", &pylmesh::Mesh::surfaceArea);
+        .def("surface_area", &pylmesh::Mesh::surfaceArea)
+        .def("add_face",
+             [](pylmesh::Mesh& self, const std::vector<uint32_t>& idx)
+             { self.addFace(idx.data(), idx.size()); },
+             nb::arg("indices"), "Add a face from a list of vertex indices")
+        .def("get_face_indices",
+             [](const pylmesh::Mesh& self, size_t f) -> std::vector<uint32_t>
+             {
+                 if (f >= self.faceCount())
+                     throw std::out_of_range("Face index out of range");
+                 const uint32_t* ptr = self.faceIndices(f);
+                 return {ptr, ptr + self.faceSize(f)};
+             },
+             nb::arg("face_index"), "Get vertex indices for a face");
 
     m.def(
         "load_mesh",

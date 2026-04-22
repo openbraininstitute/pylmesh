@@ -51,12 +51,14 @@ bool OBJExporter::save(const std::string& filepath, const Mesh& mesh)
         file << "vt " << t.u << " " << t.v << "\n";
     }
 
-    for (const auto& f : mesh.faces)
+    for (size_t fi = 0; fi < mesh.faceCount(); ++fi)
     {
         file << "f";
-        for (auto idx : f.indices)
+        const uint32_t* idx = mesh.faceIndices(fi);
+        const uint32_t n = mesh.faceSize(fi);
+        for (uint32_t i = 0; i < n; ++i)
         {
-            file << " " << (idx + 1);
+            file << " " << (idx[i] + 1);
         }
         file << "\n";
     }

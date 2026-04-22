@@ -77,14 +77,12 @@ bool PLYLoader::load(const std::string& filepath, Mesh& mesh)
         {
             int n;
             file >> n;
-            Face f;
+            std::vector<uint32_t> idx(n);
             for (int j = 0; j < n; ++j)
             {
-                unsigned int idx;
-                file >> idx;
-                f.indices.push_back(idx);
+                file >> idx[j];
             }
-            mesh.faces.push_back(f);
+            mesh.addFace(idx.data(), idx.size());
         }
     }
 

@@ -40,7 +40,7 @@ bool PLYExporter::save(const std::string& filepath, const Mesh& mesh)
     file << "property float x\n";
     file << "property float y\n";
     file << "property float z\n";
-    file << "element face " << mesh.faces.size() << "\n";
+    file << "element face " << mesh.faceCount() << "\n";
     file << "property list uchar int vertex_indices\n";
     file << "end_header\n";
 
@@ -49,12 +49,14 @@ bool PLYExporter::save(const std::string& filepath, const Mesh& mesh)
         file << v.x << " " << v.y << " " << v.z << "\n";
     }
 
-    for (const auto& f : mesh.faces)
+    for (size_t fi = 0; fi < mesh.faceCount(); ++fi)
     {
-        file << f.indices.size();
-        for (auto idx : f.indices)
+        const uint32_t* idx = mesh.faceIndices(fi);
+        const uint32_t n = mesh.faceSize(fi);
+        file << n;
+        for (uint32_t i = 0; i < n; ++i)
         {
-            file << " " << idx;
+            file << " " << idx[i];
         }
         file << "\n";
     }
