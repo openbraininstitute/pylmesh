@@ -1,6 +1,7 @@
 set(SOURCES
     src/mesh.cpp
     src/compressed_mesh.cpp
+    src/ultra_compressed_mesh.cpp
     src/quantized_mesh.cpp
     src/loader.cpp
     src/exporter.cpp

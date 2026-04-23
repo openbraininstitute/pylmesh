@@ -21,6 +21,7 @@
 #include "lmesh/loader.h"
 #include "lmesh/mesh.h"
 #include "lmesh/quantized_mesh.h"
+#include "lmesh/ultra_compressed_mesh.h"
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
@@ -211,4 +212,99 @@ NB_MODULE(_pylmesh, m)
         },
         nb::arg("filepath"), nb::arg("mesh"),
         "Save a QuantizedMesh to file (supports .obj, .stl, .ply, .off, .gltf, .glb)");
+
+    // ── UltraCompressedMesh ─────────────────────────────────────────────────
+
+    nb::class_<pylmesh::UltraCompressedMesh>(m, "UltraCompressedMesh")
+        .def("get_vertex", &pylmesh::UltraCompressedMesh::get_vertex,
+             nb::arg("i"), "Decode vertex i back to float space")
+        .def("get_face", &pylmesh::UltraCompressedMesh::get_face,
+             nb::arg("i"), "Decode face i")
+        .def("vertex_count", &pylmesh::UltraCompressedMesh::vertex_count)
+        .def("face_count", &pylmesh::UltraCompressedMesh::face_count)
+        .def("surface_area", &pylmesh::UltraCompressedMesh::surface_area,
+             "Compute total surface area")
+        .def("vertex_bytes", &pylmesh::UltraCompressedMesh::vertex_bytes,
+             "Bytes used for compressed vertex storage")
+        .def("face_bytes", &pylmesh::UltraCompressedMesh::face_bytes,
+             "Bytes used for face storage")
+        .def("total_bytes", &pylmesh::UltraCompressedMesh::total_bytes,
+             "Total bytes used")
+        .def("get_vertices_array",
+             [](pylmesh::UltraCompressedMesh& self) -> std::vector<float>
+             {
+                 std::vector<float> result;
+                 result.reserve(self.vertex_count() * 3);
+                 for (uint32_t i = 0; i < self.vertex_count(); ++i)
+                 {
+                     pylmesh::Vertex v = self.get_vertex(i);
+                     result.push_back(v.x);
+                     result.push_back(v.y);
+                     result.push_back(v.z);
+                 }
+                 return result;
+             },
+             "Get all vertices as flat array [x1,y1,z1,x2,y2,z2,...]")
+        .def("get_faces_array",
+             [](const pylmesh::UltraCompressedMesh& self) -> std::vector<uint32_t>
+             {
+                 std::vector<uint32_t> result;
+                 result.reserve(self.face_count() * 3);
+                 for (uint32_t i = 0; i < self.face_count(); ++i)
+                 {
+                     auto f = self.get_face(i);
+                     result.push_back(f[0]);
+                     result.push_back(f[1]);
+                     result.push_back(f[2]);
+                 }
+                 return result;
+             },
+             "Get all faces as flat array [i1,i2,i3,...]");
+
+    nb::class_<pylmesh::UltraCompressedMeshBuilder>(m, "UltraCompressedMeshBuilder")
+        .def(nb::init<pylmesh::Vertex, pylmesh::Vertex, int, bool>(),
+             nb::arg("min"), nb::arg("max"),
+             nb::arg("bits") = 16, nb::arg("dedup") = true,
+             "Create a builder with bounding box and precision")
+        .def("reserve", &pylmesh::UltraCompressedMeshBuilder::reserve,
+             nb::arg("vertex_count"), nb::arg("face_count"),
+             "Pre-allocate storage")
+        .def("add_vertex", &pylmesh::UltraCompressedMeshBuilder::add_vertex,
+             nb::arg("x"), nb::arg("y"), nb::arg("z"),
+             "Quantize and store a vertex, returns slot index")
+        .def("add_face", &pylmesh::UltraCompressedMeshBuilder::add_face,
+             nb::arg("a"), nb::arg("b"), nb::arg("c"),
+             "Store a triangle face from slot indices")
+        .def("vertex_count", &pylmesh::UltraCompressedMeshBuilder::vertex_count)
+        .def("build",
+             [](pylmesh::UltraCompressedMeshBuilder& self) -> pylmesh::UltraCompressedMesh
+             { return std::move(self).build(); },
+             "Consume the builder and return a sealed UltraCompressedMesh");
+
+    m.def(
+        "load_ultra_compressed_mesh",
+        [](const std::string& filepath)
+        {
+            pylmesh::UltraCompressedMesh mesh;
+            if (pylmesh::MeshLoaderFactory::loadMesh(filepath, mesh))
+            {
+                return mesh;
+            }
+            throw std::runtime_error("Failed to load ultra compressed mesh: " + filepath);
+        },
+        nb::arg("filepath"),
+        "Load a mesh into an UltraCompressedMesh");
+
+    m.def(
+        "save_ultra_compressed_mesh",
+        [](const std::string& filepath, pylmesh::UltraCompressedMesh& mesh)
+        {
+            if (pylmesh::MeshExporterFactory::saveMesh(filepath, mesh))
+            {
+                return true;
+            }
+            throw std::runtime_error("Failed to save ultra compressed mesh: " + filepath);
+        },
+        nb::arg("filepath"), nb::arg("mesh"),
+        "Save an UltraCompressedMesh to file");
 }

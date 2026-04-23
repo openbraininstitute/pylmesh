@@ -28,6 +28,7 @@ class OBJExporter : public MeshExporter
   public:
     bool save(const std::string& filepath, const Mesh& mesh) override;
     bool save(const std::string& filepath, const QuantizedMesh& mesh) override;
+    bool save(const std::string& filepath, UltraCompressedMesh& mesh) override;
     bool canSave(const std::string& filepath) const override;
 };
 

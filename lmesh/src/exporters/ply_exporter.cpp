@@ -19,6 +19,7 @@
 
 #include "lmesh/exporters/ply_exporter.h"
 #include "lmesh/quantized_mesh.h"
+#include "lmesh/ultra_compressed_mesh.h"
 #include <fstream>
 
 namespace pylmesh
@@ -96,6 +97,28 @@ bool PLYExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
         file << "3 " << f[0] << " " << f[1] << " " << f[2] << "\n";
     }
 
+    return true;
+}
+
+bool PLYExporter::save(const std::string& filepath, UltraCompressedMesh& mesh)
+{
+    std::ofstream file(filepath);
+    if (!file.is_open()) return false;
+
+    file << "ply\nformat ascii 1.0\n";
+    file << "element vertex " << mesh.vertex_count() << "\n";
+    file << "property float x\nproperty float y\nproperty float z\n";
+    file << "element face " << mesh.face_count() << "\n";
+    file << "property list uchar int vertex_indices\nend_header\n";
+
+    for (uint32_t i = 0; i < mesh.vertex_count(); ++i) {
+        Vertex v = mesh.get_vertex(i);
+        file << v.x << " " << v.y << " " << v.z << "\n";
+    }
+    for (uint32_t i = 0; i < mesh.face_count(); ++i) {
+        auto f = mesh.get_face(i);
+        file << "3 " << f[0] << " " << f[1] << " " << f[2] << "\n";
+    }
     return true;
 }
 

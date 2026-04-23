@@ -27,7 +27,8 @@ class OBJLoader : public MeshLoader
 {
   public:
     bool load(const std::string& filepath, Mesh& mesh) override;
-    bool load(const std::string& filepath, QuantizedMesh& mesh) override;    
+    bool load(const std::string& filepath, QuantizedMesh& mesh) override;
+    bool load(const std::string& filepath, UltraCompressedMesh& mesh) override;    
     bool canLoad(const std::string& filepath) const override;
 };
 

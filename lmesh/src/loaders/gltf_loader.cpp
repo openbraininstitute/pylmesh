@@ -425,5 +425,33 @@ bool GLTFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
 #endif
 }
 
+bool GLTFLoader::load(const std::string& filepath, UltraCompressedMesh& mesh)
+{
+    // Load as Mesh first, then convert via builder
+    Mesh raw;
+    if (!load(filepath, raw))
+        return false;
+
+    Vertex bmin{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
+    Vertex bmax{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
+    for (const auto& v : raw.vertices) {
+        if (v.x < bmin.x) bmin.x = v.x; if (v.x > bmax.x) bmax.x = v.x;
+        if (v.y < bmin.y) bmin.y = v.y; if (v.y > bmax.y) bmax.y = v.y;
+        if (v.z < bmin.z) bmin.z = v.z; if (v.z > bmax.z) bmax.z = v.z;
+    }
+
+    UltraCompressedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/false);
+    builder.reserve(raw.vertices.size(), raw.faceCount());
+    for (const auto& v : raw.vertices)
+        builder.add_vertex(v.x, v.y, v.z);
+    for (size_t fi = 0; fi < raw.faceCount(); ++fi) {
+        const uint32_t* idx = raw.faceIndices(fi);
+        uint32_t n = raw.faceSize(fi);
+        for (uint32_t j = 1; j + 1 < n; ++j)
+            builder.add_face(idx[0], idx[j], idx[j + 1]);
+    }
+    mesh = std::move(builder).build();
+    return mesh.vertex_count() > 0;
+}
 
 } // namespace pylmesh

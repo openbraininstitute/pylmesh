@@ -19,6 +19,7 @@
 
 #include "lmesh/exporters/gltf_exporter.h"
 #include "lmesh/quantized_mesh.h"
+#include "lmesh/ultra_compressed_mesh.h"
 #include <algorithm>
 #include <cstring>
 #include <limits>
@@ -635,6 +636,16 @@ bool GLBExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
 #else
     return false;
 #endif
+}
+
+bool GLTFExporter::save(const std::string& filepath, UltraCompressedMesh& mesh)
+{
+    return false; // GLTF text export not supported for UltraCompressedMesh; use GLB
+}
+
+bool GLBExporter::save(const std::string& filepath, UltraCompressedMesh& mesh)
+{
+    return false; // TODO: implement via dequantize path if needed
 }
 
 } // namespace pylmesh

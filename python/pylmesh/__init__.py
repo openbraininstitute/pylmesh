@@ -23,8 +23,10 @@
 
 from ._pylmesh import (Mesh, Vertex, Normal, TexCoord,
                        QuantizedMesh, QuantizedMeshBuilder, AxisBits,
+                       UltraCompressedMesh, UltraCompressedMeshBuilder,
                        load_mesh, save_mesh,
-                       load_quantized_mesh, save_quantized_mesh)
+                       load_quantized_mesh, save_quantized_mesh,
+                       load_ultra_compressed_mesh, save_ultra_compressed_mesh)
 from .trimesh_utils import to_trimesh
 from .batch_conversion_glb import batch_convert_to_glb
 from pathlib import Path
@@ -46,9 +48,13 @@ __all__ = ["Mesh",
            "QuantizedMesh",
            "QuantizedMeshBuilder",
            "AxisBits",
+           "UltraCompressedMesh",
+           "UltraCompressedMeshBuilder",
            "load_mesh", 
            "save_mesh",
            "load_quantized_mesh",
            "save_quantized_mesh",
+           "load_ultra_compressed_mesh",
+           "save_ultra_compressed_mesh",
            "to_trimesh", 
            "batch_convert_to_glb"]

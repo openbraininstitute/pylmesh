@@ -127,5 +127,45 @@ bool STLLoader::load(const std::string& filepath, QuantizedMesh& mesh)
     return mesh.vertex_count() > 0;
 }
 
+bool STLLoader::load(const std::string& filepath, UltraCompressedMesh& mesh)
+{
+    std::ifstream file(filepath);
+    if (!file.is_open()) return false;
+
+    Vertex bmin{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
+    Vertex bmax{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
+    size_t vCount = 0;
+    std::string line;
+
+    while (std::getline(file, line)) {
+        std::istringstream iss(line); std::string kw; iss >> kw;
+        if (kw == "vertex") {
+            float x, y, z; iss >> x >> y >> z;
+            if (x < bmin.x) bmin.x = x; if (x > bmax.x) bmax.x = x;
+            if (y < bmin.y) bmin.y = y; if (y > bmax.y) bmax.y = y;
+            if (z < bmin.z) bmin.z = z; if (z > bmax.z) bmax.z = z;
+            ++vCount;
+        }
+    }
+    if (vCount == 0) return false;
+
+    UltraCompressedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/true);
+    builder.reserve(vCount, vCount / 3);
+
+    file.clear(); file.seekg(0);
+    std::vector<uint32_t> slots; slots.reserve(vCount);
+    while (std::getline(file, line)) {
+        std::istringstream iss(line); std::string kw; iss >> kw;
+        if (kw == "vertex") {
+            float x, y, z; iss >> x >> y >> z;
+            slots.push_back(builder.add_vertex(x, y, z));
+        }
+    }
+    for (size_t i = 0; i + 2 < slots.size(); i += 3)
+        builder.add_face(slots[i], slots[i + 1], slots[i + 2]);
+
+    mesh = std::move(builder).build();
+    return mesh.vertex_count() > 0;
+}
 
 } // namespace pylmesh

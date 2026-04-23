@@ -171,5 +171,44 @@ bool PLYLoader::load(const std::string& filepath, QuantizedMesh& mesh)
     return mesh.vertex_count() > 0;
 }
 
+bool PLYLoader::load(const std::string& filepath, UltraCompressedMesh& mesh)
+{
+    std::ifstream file(filepath);
+    if (!file.is_open()) return false;
+
+    std::string line;
+    int vertexCount = 0, faceCount = 0;
+    while (std::getline(file, line)) {
+        std::istringstream iss(line); std::string kw; iss >> kw;
+        if (kw == "element") { std::string t; int c; iss >> t >> c; if (t == "vertex") vertexCount = c; if (t == "face") faceCount = c; }
+        else if (kw == "end_header") break;
+    }
+    if (vertexCount == 0) return false;
+
+    auto dataStart = file.tellg();
+    Vertex bmin{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
+    Vertex bmax{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
+    for (int i = 0; i < vertexCount; ++i) {
+        float x, y, z; file >> x >> y >> z;
+        if (x < bmin.x) bmin.x = x; if (x > bmax.x) bmax.x = x;
+        if (y < bmin.y) bmin.y = y; if (y > bmax.y) bmax.y = y;
+        if (z < bmin.z) bmin.z = z; if (z > bmax.z) bmax.z = z;
+        std::getline(file, line);
+    }
+
+    UltraCompressedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/false);
+    builder.reserve(vertexCount, faceCount);
+    file.clear(); file.seekg(dataStart);
+    for (int i = 0; i < vertexCount; ++i) {
+        float x, y, z; file >> x >> y >> z; builder.add_vertex(x, y, z); std::getline(file, line);
+    }
+    for (int i = 0; i < faceCount; ++i) {
+        int n; file >> n; std::vector<uint32_t> idx(n);
+        for (int j = 0; j < n; ++j) file >> idx[j];
+        for (int j = 1; j + 1 < n; ++j) builder.add_face(idx[0], idx[j], idx[j + 1]);
+    }
+    mesh = std::move(builder).build();
+    return mesh.vertex_count() > 0;
+}
 
 } // namespace pylmesh

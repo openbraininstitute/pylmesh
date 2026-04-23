@@ -50,11 +50,16 @@ struct AxisBits
     int x = 16, y = 16, z = 16;
 
     // Convenience: all three axes use the same resolution.
-    static AxisBits uniform(int bits) noexcept { return {bits, bits, bits}; }
+    static AxisBits uniform(int bits) noexcept
+    {
+        return {bits, bits, bits};
+    }
 
-    int total() const noexcept { return x + y + z; }
+    int total() const noexcept
+    {
+        return x + y + z;
+    }
 };
-
 
 // ============================================================================
 //  QuantizedMesh — sealed, read-only storage
@@ -67,16 +72,37 @@ class QuantizedMesh
     QuantizedMesh() = default;
 
     [[nodiscard]] Vertex get_vertex(uint32_t i) const;
-    [[nodiscard]] Face   get_face(uint32_t i)   const;
+    [[nodiscard]] Face get_face(uint32_t i) const;
 
-    uint32_t vertex_count()    const noexcept { return static_cast<uint32_t>(vdata_.count()); }
-    uint32_t face_count()      const noexcept { return static_cast<uint32_t>(indices_.count() / 3); }
-    AxisBits bits_per_axis()   const noexcept { return {bits_[0], bits_[1], bits_[2]}; }
-    int      vertex_bit_width()const noexcept { return bits_[0] + bits_[1] + bits_[2]; }
+    uint32_t vertex_count() const noexcept
+    {
+        return static_cast<uint32_t>(vdata_.count());
+    }
+    uint32_t face_count() const noexcept
+    {
+        return static_cast<uint32_t>(indices_.count() / 3);
+    }
+    AxisBits bits_per_axis() const noexcept
+    {
+        return {bits_[0], bits_[1], bits_[2]};
+    }
+    int vertex_bit_width() const noexcept
+    {
+        return bits_[0] + bits_[1] + bits_[2];
+    }
 
-    size_t vertex_bytes() const noexcept { return vdata_.bytes_used(); }
-    size_t face_bytes()   const noexcept { return indices_.bytes_used(); }
-    size_t total_bytes()  const noexcept { return vertex_bytes() + face_bytes(); }
+    size_t vertex_bytes() const noexcept
+    {
+        return vdata_.bytes_used();
+    }
+    size_t face_bytes() const noexcept
+    {
+        return indices_.bytes_used();
+    }
+    size_t total_bytes() const noexcept
+    {
+        return vertex_bytes() + face_bytes();
+    }
 
     [[nodiscard]] double surface_area() const;
 
@@ -86,19 +112,18 @@ class QuantizedMesh
     QuantizedMesh(Vertex min, Vertex max, AxisBits bits);
 
     [[nodiscard]] uint64_t encode(float x, float y, float z) const noexcept;
-    [[nodiscard]] Vertex   decode(uint64_t packed)           const noexcept;
+    [[nodiscard]] Vertex decode(uint64_t packed) const noexcept;
 
     // Per-axis configuration, computed once in the constructor.
-    int      bits_[3] = {};    // resolution per axis
-    uint64_t masks_[3] = {};   // (1ull << bits_[i]) - 1
-    unsigned shifts_[3] = {};  // bit offsets: 0,  bx,  bx+by
-    float    bbox_min_[3] = {};
-    float    bbox_scale_[3] = {}; // world units per grid step, per axis
+    int bits_[3] = {};        // resolution per axis
+    uint64_t masks_[3] = {};  // (1ull << bits_[i]) - 1
+    unsigned shifts_[3] = {}; // bit offsets: 0,  bx,  bx+by
+    float bbox_min_[3] = {};
+    float bbox_scale_[3] = {}; // world units per grid step, per axis
 
     BitPackedArray vdata_;   // width = bx+by+bz,              count = vertex_count
     BitPackedArray indices_; // width = ⌈log₂(vertex_count)⌉,  count = face_count*3
 };
-
 
 // ============================================================================
 //  QuantizedMeshBuilder
@@ -106,14 +131,11 @@ class QuantizedMesh
 class QuantizedMeshBuilder
 {
   public:
-    explicit QuantizedMeshBuilder(Vertex  min,
-                                  Vertex  max,
-                                  AxisBits bits  = {},
-                                  bool     dedup = true);
+    explicit QuantizedMeshBuilder(Vertex min, Vertex max, AxisBits bits = {}, bool dedup = true);
 
-    void     reserve(size_t vertex_count, size_t face_count);
+    void reserve(size_t vertex_count, size_t face_count);
     uint32_t add_vertex(float x, float y, float z);
-    void     add_face(uint32_t a, uint32_t b, uint32_t c);
+    void add_face(uint32_t a, uint32_t b, uint32_t c);
 
     uint32_t vertex_count() const noexcept
     {
@@ -128,7 +150,7 @@ class QuantizedMeshBuilder
     std::vector<uint64_t> tmp_vdata_;
     std::vector<uint32_t> tmp_indices_;
 
-    bool        dedup_;
+    bool dedup_;
     FlatHashMap dedup_map_;
 
     static uint32_t index_width(uint32_t n) noexcept;
