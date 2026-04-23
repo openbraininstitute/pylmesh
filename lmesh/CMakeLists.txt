@@ -39,21 +39,8 @@ if(PYLMESH_USE_OPENMP)
 
     target_compile_definitions(lmesh PUBLIC PYLMESH_USE_OPENMP)
 endif()
-if(PYLMESH_USE_GLM)
-    target_link_libraries(lmesh PUBLIC glm)
-    target_compile_definitions(lmesh PUBLIC PYLMESH_USE_GLM)
-endif()
 
-if(PYLMESH_USE_JSON)
-    target_link_libraries(lmesh PUBLIC nlohmann_json::nlohmann_json)
-    target_compile_definitions(lmesh PUBLIC PYLMESH_USE_JSON)
-endif()
 
-if(PYLMESH_USE_HDF5)
-    target_link_libraries(lmesh PUBLIC ${HDF5_LIBRARIES})
-    target_include_directories(lmesh PUBLIC ${HDF5_INCLUDE_DIRS})
-    target_compile_definitions(lmesh PUBLIC PYLMESH_USE_HDF5)
-endif()
 
 if(PYLMESH_USE_TINYGLTF)
     target_link_libraries(lmesh PUBLIC tinygltf)
