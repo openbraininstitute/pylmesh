@@ -33,16 +33,16 @@ class MeshLoader
     virtual bool load(const std::string& filepath, Mesh& mesh) = 0;
     virtual bool load(const std::string& filepath, QuantizedMesh& mesh) = 0;
     virtual bool load(const std::string& filepath, UltraQuantizedMesh& mesh) = 0;
-    virtual bool canLoad(const std::string& filepath) const = 0;
+    virtual bool can_load(const std::string& filepath) const = 0;
 };
 
 class MeshLoaderFactory
 {
   public:
-    static std::unique_ptr<MeshLoader> createLoader(const std::string& filepath);
-    static bool loadMesh(const std::string& filepath, Mesh& mesh);
-    static bool loadMesh(const std::string& filepath, QuantizedMesh& mesh);
-    static bool loadMesh(const std::string& filepath, UltraQuantizedMesh& mesh);
+    static std::unique_ptr<MeshLoader> create_loader(const std::string& filepath);
+    static bool load_mesh(const std::string& filepath, Mesh& mesh);
+    static bool load_mesh(const std::string& filepath, QuantizedMesh& mesh);
+    static bool load_mesh(const std::string& filepath, UltraQuantizedMesh& mesh);
 };
 
 } // namespace pylmesh

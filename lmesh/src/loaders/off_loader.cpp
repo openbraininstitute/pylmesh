@@ -26,7 +26,7 @@
 namespace pylmesh
 {
 
-bool OFFLoader::canLoad(const std::string& filepath) const
+bool OFFLoader::can_load(const std::string& filepath) const
 {
     return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".off";
 }
@@ -43,17 +43,17 @@ bool OFFLoader::load(const std::string& filepath, Mesh& mesh)
     if (header != "OFF")
         return false;
 
-    int nVertices, nFaces, nEdges;
-    file >> nVertices >> nFaces >> nEdges;
+    int n_vertices, n_faces, n_edges;
+    file >> n_vertices >> n_faces >> n_edges;
 
-    for (int i = 0; i < nVertices; ++i)
+    for (int i = 0; i < n_vertices; ++i)
     {
         Vertex v;
         file >> v.x >> v.y >> v.z;
         mesh.vertices.push_back(v);
     }
 
-    for (int i = 0; i < nFaces; ++i)
+    for (int i = 0; i < n_faces; ++i)
     {
         int n;
         file >> n;
@@ -79,14 +79,14 @@ bool OFFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
     if (header != "OFF")
         return false;
 
-    int nVertices, nFaces, nEdges;
-    file >> nVertices >> nFaces >> nEdges;
+    int n_vertices, n_faces, n_edges;
+    file >> n_vertices >> n_faces >> n_edges;
 
-    if (nVertices == 0)
+    if (n_vertices == 0)
         return false;
 
     // Pass 1 — read vertices to determine bounding box
-    auto dataStart = file.tellg();
+    auto data_start = file.tellg();
 
     Vertex bmin{ std::numeric_limits<float>::max(),
                  std::numeric_limits<float>::max(),
@@ -95,7 +95,7 @@ bool OFFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
                  std::numeric_limits<float>::lowest(),
                  std::numeric_limits<float>::lowest() };
 
-    for (int i = 0; i < nVertices; ++i)
+    for (int i = 0; i < n_vertices; ++i)
     {
         float x, y, z;
         file >> x >> y >> z;
@@ -106,19 +106,19 @@ bool OFFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
 
     // Pass 2 — rewind to data start, add vertices and faces
     QuantizedMeshBuilder builder(bmin, bmax, AxisBits::uniform(16), /*dedup=*/false);
-    builder.reserve(nVertices, nFaces);
+    builder.reserve(n_vertices, n_faces);
 
     file.clear();
-    file.seekg(dataStart);
+    file.seekg(data_start);
 
-    for (int i = 0; i < nVertices; ++i)
+    for (int i = 0; i < n_vertices; ++i)
     {
         float x, y, z;
         file >> x >> y >> z;
         builder.add_vertex(x, y, z);
     }
 
-    for (int i = 0; i < nFaces; ++i)
+    for (int i = 0; i < n_faces; ++i)
     {
         int n;
         file >> n;
@@ -140,13 +140,13 @@ bool OFFLoader::load(const std::string& filepath, UltraQuantizedMesh& mesh)
     if (!file.is_open()) return false;
     std::string header; file >> header;
     if (header != "OFF") return false;
-    int nVertices, nFaces, nEdges; file >> nVertices >> nFaces >> nEdges;
-    if (nVertices == 0) return false;
+    int n_vertices, n_faces, n_edges; file >> n_vertices >> n_faces >> n_edges;
+    if (n_vertices == 0) return false;
 
-    auto dataStart = file.tellg();
+    auto data_start = file.tellg();
     Vertex bmin{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
     Vertex bmax{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
-    for (int i = 0; i < nVertices; ++i) {
+    for (int i = 0; i < n_vertices; ++i) {
         float x, y, z; file >> x >> y >> z;
         if (x < bmin.x) bmin.x = x; if (x > bmax.x) bmax.x = x;
         if (y < bmin.y) bmin.y = y; if (y > bmax.y) bmax.y = y;
@@ -154,10 +154,10 @@ bool OFFLoader::load(const std::string& filepath, UltraQuantizedMesh& mesh)
     }
 
     UltraQuantizedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/false);
-    builder.reserve(nVertices, nFaces);
-    file.clear(); file.seekg(dataStart);
-    for (int i = 0; i < nVertices; ++i) { float x, y, z; file >> x >> y >> z; builder.add_vertex(x, y, z); }
-    for (int i = 0; i < nFaces; ++i) {
+    builder.reserve(n_vertices, n_faces);
+    file.clear(); file.seekg(data_start);
+    for (int i = 0; i < n_vertices; ++i) { float x, y, z; file >> x >> y >> z; builder.add_vertex(x, y, z); }
+    for (int i = 0; i < n_faces; ++i) {
         int n; file >> n; std::vector<uint32_t> idx(n);
         for (int j = 0; j < n; ++j) file >> idx[j];
         for (int j = 1; j + 1 < n; ++j) builder.add_face(idx[0], idx[j], idx[j + 1]);

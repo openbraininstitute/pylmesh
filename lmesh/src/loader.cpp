@@ -27,50 +27,50 @@
 namespace pylmesh
 {
 
-std::unique_ptr<MeshLoader> MeshLoaderFactory::createLoader(const std::string& filepath)
+std::unique_ptr<MeshLoader> MeshLoaderFactory::create_loader(const std::string& filepath)
 {
-    if (OBJLoader().canLoad(filepath))
+    if (OBJLoader().can_load(filepath))
     {
         return std::make_unique<OBJLoader>();
     }
-    if (STLLoader().canLoad(filepath))
+    if (STLLoader().can_load(filepath))
     {
         return std::make_unique<STLLoader>();
     }
-    if (PLYLoader().canLoad(filepath))
+    if (PLYLoader().can_load(filepath))
     {
         return std::make_unique<PLYLoader>();
     }
-    if (OFFLoader().canLoad(filepath))
+    if (OFFLoader().can_load(filepath))
     {
         return std::make_unique<OFFLoader>();
     }
-    if (GLTFLoader().canLoad(filepath))
+    if (GLTFLoader().can_load(filepath))
     {
         return std::make_unique<GLTFLoader>();
     }
     return nullptr;
 }
 
-bool MeshLoaderFactory::loadMesh(const std::string& filepath, Mesh& mesh)
+bool MeshLoaderFactory::load_mesh(const std::string& filepath, Mesh& mesh)
 {
-    auto loader = createLoader(filepath);
+    auto loader = create_loader(filepath);
     if (!loader)
         return false;
     return loader->load(filepath, mesh);
 }
 
-bool MeshLoaderFactory::loadMesh(const std::string& filepath, QuantizedMesh& mesh)
+bool MeshLoaderFactory::load_mesh(const std::string& filepath, QuantizedMesh& mesh)
 {
-    auto loader = createLoader(filepath);
+    auto loader = create_loader(filepath);
     if (!loader)
         return false;
     return loader->load(filepath, mesh);
 }
 
-bool MeshLoaderFactory::loadMesh(const std::string& filepath, UltraQuantizedMesh& mesh)
+bool MeshLoaderFactory::load_mesh(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
-    auto loader = createLoader(filepath);
+    auto loader = create_loader(filepath);
     if (!loader)
         return false;
     return loader->load(filepath, mesh);

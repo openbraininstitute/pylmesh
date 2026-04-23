@@ -36,7 +36,7 @@
 namespace pylmesh
 {
 
-bool GLTFLoader::canLoad(const std::string& filepath) const
+bool GLTFLoader::can_load(const std::string& filepath) const
 {
     size_t len = filepath.size();
     return (len >= 5 && filepath.substr(len - 5) == ".gltf") ||
@@ -67,51 +67,51 @@ bool GLTFLoader::load(const std::string& filepath, Mesh& mesh)
 
         mesh.clear();
 
-        for (const auto& gltfMesh : model.meshes)
+        for (const auto& gltf_mesh : model.meshes)
         {
-            for (const auto& primitive : gltfMesh.primitives)
+            for (const auto& primitive : gltf_mesh.primitives)
             {
                 if (primitive.mode != TINYGLTF_MODE_TRIANGLES)
                     continue;
 
-                size_t vertexOffset = mesh.vertices.size();
+                size_t vertex_offset = mesh.vertices.size();
 
 #ifdef PYLMESH_USE_DRACO
                 // Check for Draco compression
                 if (primitive.extensions.count("KHR_draco_mesh_compression"))
                 {
                     const auto& ext = primitive.extensions.at("KHR_draco_mesh_compression");
-                    int bufferViewIdx = ext.Get("bufferView").GetNumberAsInt();
+                    int buffer_view_idx = ext.Get("bufferView").GetNumberAsInt();
 
-                    if (bufferViewIdx >= 0 && bufferViewIdx < model.bufferViews.size())
+                    if (buffer_view_idx >= 0 && buffer_view_idx < model.bufferViews.size())
                     {
-                        const auto& bufferView = model.bufferViews[bufferViewIdx];
+                        const auto& bufferView = model.bufferViews[buffer_view_idx];
                         if (bufferView.buffer >= 0 && bufferView.buffer < model.buffers.size())
                         {
                             const auto& buffer = model.buffers[bufferView.buffer];
                             const uint8_t* data = &buffer.data[bufferView.byteOffset];
 
-                            draco::DecoderBuffer decBuffer;
-                            decBuffer.Init(reinterpret_cast<const char*>(data),
+                            draco::DecoderBuffer dec_buffer;
+                            dec_buffer.Init(reinterpret_cast<const char*>(data),
                                            bufferView.byteLength);
 
                             draco::Decoder decoder;
-                            auto statusor = decoder.DecodeMeshFromBuffer(&decBuffer);
+                            auto statusor = decoder.DecodeMeshFromBuffer(&dec_buffer);
 
                             if (statusor.ok())
                             {
-                                std::unique_ptr<draco::Mesh> dracoMesh =
+                                std::unique_ptr<draco::Mesh> draco_mesh =
                                     std::move(statusor).value();
 
                                 // Extract positions
-                                const draco::PointAttribute* posAttr = dracoMesh->GetNamedAttribute(
+                                const draco::PointAttribute* pos_attr = draco_mesh->GetNamedAttribute(
                                     draco::GeometryAttribute::POSITION);
-                                if (posAttr)
+                                if (pos_attr)
                                 {
-                                    for (draco::PointIndex i(0); i < dracoMesh->num_points(); ++i)
+                                    for (draco::PointIndex i(0); i < draco_mesh->num_points(); ++i)
                                     {
                                         float pos[3];
-                                        posAttr->GetValue(posAttr->mapped_index(i), pos);
+                                        pos_attr->GetValue(pos_attr->mapped_index(i), pos);
                                         Vertex v;
                                         v.x = pos[0];
                                         v.y = pos[1];
@@ -121,13 +121,13 @@ bool GLTFLoader::load(const std::string& filepath, Mesh& mesh)
                                 }
 
                                 // Extract indices
-                                for (draco::FaceIndex i(0); i < dracoMesh->num_faces(); ++i)
+                                for (draco::FaceIndex i(0); i < draco_mesh->num_faces(); ++i)
                                 {
-                                    const draco::Mesh::Face& face = dracoMesh->face(i);
+                                    const draco::Mesh::Face& face = draco_mesh->face(i);
                                     uint32_t idx[3] = {
-                                        static_cast<uint32_t>(vertexOffset + face[0].value()),
-                                        static_cast<uint32_t>(vertexOffset + face[1].value()),
-                                        static_cast<uint32_t>(vertexOffset + face[2].value())};
+                                        static_cast<uint32_t>(vertex_offset + face[0].value()),
+                                        static_cast<uint32_t>(vertex_offset + face[1].value()),
+                                        static_cast<uint32_t>(vertex_offset + face[2].value())};
                                     mesh.add_face(idx, 3);
                                 }
 
@@ -139,10 +139,10 @@ bool GLTFLoader::load(const std::string& filepath, Mesh& mesh)
 #endif
 
                 // Load positions
-                auto posIt = primitive.attributes.find("POSITION");
-                if (posIt != primitive.attributes.end())
+                auto pos_it = primitive.attributes.find("POSITION");
+                if (pos_it != primitive.attributes.end())
                 {
-                    const auto& accessor = model.accessors[posIt->second];
+                    const auto& accessor = model.accessors[pos_it->second];
                     if (accessor.bufferView < 0 || accessor.bufferView >= model.bufferViews.size())
                         continue;
 
@@ -198,7 +198,7 @@ bool GLTFLoader::load(const std::string& filepath, Mesh& mesh)
                                 idx = reinterpret_cast<const uint32_t*>(data)[i + j];
                             else
                                 idx = data[i + j];
-                            tri[j] = static_cast<uint32_t>(vertexOffset + idx);
+                            tri[j] = static_cast<uint32_t>(vertex_offset + idx);
                         }
                         mesh.add_face(tri, 3);
                     }
@@ -236,7 +236,7 @@ bool GLTFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
             return false;
 
         // Helper: read a raw index from a typed buffer
-        auto readIndex = [](const uint8_t* data, int componentType, size_t i) -> uint32_t {
+        auto read_index = [](const uint8_t* data, int componentType, size_t i) -> uint32_t {
             if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
                 return reinterpret_cast<const uint16_t*>(data)[i];
             else if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)
@@ -249,9 +249,9 @@ bool GLTFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
         struct DecodedDraco
         {
             std::unique_ptr<draco::Mesh> mesh;
-            const draco::PointAttribute* posAttr;
+            const draco::PointAttribute* pos_attr;
         };
-        std::vector<DecodedDraco> dracoMeshes;
+        std::vector<DecodedDraco> draco_meshes;
 #endif
 
         // ─────────────────────────────────────────────────────────────────────
@@ -263,18 +263,18 @@ bool GLTFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
         Vertex bmax{ std::numeric_limits<float>::lowest(),
                      std::numeric_limits<float>::lowest(),
                      std::numeric_limits<float>::lowest() };
-        bool hasVerts = false;
+        bool has_verts = false;
 
-        auto updateBounds = [&](float x, float y, float z) {
+        auto update_bounds = [&](float x, float y, float z) {
             if (x < bmin.x) bmin.x = x; if (x > bmax.x) bmax.x = x;
             if (y < bmin.y) bmin.y = y; if (y > bmax.y) bmax.y = y;
             if (z < bmin.z) bmin.z = z; if (z > bmax.z) bmax.z = z;
-            hasVerts = true;
+            has_verts = true;
         };
 
-        for (const auto& gltfMesh : model.meshes)
+        for (const auto& gltf_mesh : model.meshes)
         {
-            for (const auto& primitive : gltfMesh.primitives)
+            for (const auto& primitive : gltf_mesh.primitives)
             {
                 if (primitive.mode != TINYGLTF_MODE_TRIANGLES)
                     continue;
@@ -287,46 +287,46 @@ bool GLTFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
                     const auto& bv = model.bufferViews[bvIdx];
                     const auto& buf = model.buffers[bv.buffer];
 
-                    draco::DecoderBuffer decBuffer;
-                    decBuffer.Init(reinterpret_cast<const char*>(&buf.data[bv.byteOffset]),
+                    draco::DecoderBuffer dec_buffer;
+                    dec_buffer.Init(reinterpret_cast<const char*>(&buf.data[bv.byteOffset]),
                                    bv.byteLength);
 
                     draco::Decoder decoder;
-                    auto statusor = decoder.DecodeMeshFromBuffer(&decBuffer);
+                    auto statusor = decoder.DecodeMeshFromBuffer(&dec_buffer);
                     if (statusor.ok())
                     {
                         auto dm = std::move(statusor).value();
-                        const draco::PointAttribute* posAttr =
+                        const draco::PointAttribute* pos_attr =
                             dm->GetNamedAttribute(draco::GeometryAttribute::POSITION);
-                        if (posAttr)
+                        if (pos_attr)
                         {
                             float pos[3];
                             for (draco::PointIndex i(0); i < dm->num_points(); ++i)
                             {
-                                posAttr->GetValue(posAttr->mapped_index(i), pos);
-                                updateBounds(pos[0], pos[1], pos[2]);
+                                pos_attr->GetValue(pos_attr->mapped_index(i), pos);
+                                update_bounds(pos[0], pos[1], pos[2]);
                             }
                         }
-                        dracoMeshes.push_back({std::move(dm), posAttr});
+                        draco_meshes.push_back({std::move(dm), pos_attr});
                         continue;
                     }
                 }
 #endif
-                auto posIt = primitive.attributes.find("POSITION");
-                if (posIt == primitive.attributes.end()) continue;
+                auto pos_it = primitive.attributes.find("POSITION");
+                if (pos_it == primitive.attributes.end()) continue;
 
-                const auto& acc = model.accessors[posIt->second];
+                const auto& acc = model.accessors[pos_it->second];
                 const auto& bv = model.bufferViews[acc.bufferView];
                 const auto& buf = model.buffers[bv.buffer];
                 const float* positions = reinterpret_cast<const float*>(
                     &buf.data[bv.byteOffset + acc.byteOffset]);
 
                 for (size_t i = 0; i < acc.count; ++i)
-                    updateBounds(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
+                    update_bounds(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
             }
         }
 
-        if (!hasVerts)
+        if (!has_verts)
             return false;
 
         // ─────────────────────────────────────────────────────────────────────
@@ -334,34 +334,34 @@ bool GLTFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
         // ─────────────────────────────────────────────────────────────────────
         QuantizedMeshBuilder builder(bmin, bmax, AxisBits::uniform(16), /*dedup=*/false);
 
-        uint32_t globalVertexOffset = 0;
+        uint32_t global_vertex_offset = 0;
 #ifdef PYLMESH_USE_DRACO
-        size_t dracoIdx = 0;
+        size_t draco_idx = 0;
 #endif
 
-        for (const auto& gltfMesh : model.meshes)
+        for (const auto& gltf_mesh : model.meshes)
         {
-            for (const auto& primitive : gltfMesh.primitives)
+            for (const auto& primitive : gltf_mesh.primitives)
             {
                 if (primitive.mode != TINYGLTF_MODE_TRIANGLES)
                     continue;
 
-                uint32_t primVertexOffset = globalVertexOffset;
+                uint32_t prim_vertex_offset = global_vertex_offset;
 
 #ifdef PYLMESH_USE_DRACO
                 if (primitive.extensions.count("KHR_draco_mesh_compression"))
                 {
-                    auto& dd = dracoMeshes[dracoIdx++];
-                    const draco::PointAttribute* posAttr =
+                    auto& dd = draco_meshes[draco_idx++];
+                    const draco::PointAttribute* pos_attr =
                         dd.mesh->GetNamedAttribute(draco::GeometryAttribute::POSITION);
-                    if (posAttr)
+                    if (pos_attr)
                     {
                         float pos[3];
                         for (draco::PointIndex i(0); i < dd.mesh->num_points(); ++i)
                         {
-                            posAttr->GetValue(posAttr->mapped_index(i), pos);
+                            pos_attr->GetValue(pos_attr->mapped_index(i), pos);
                             builder.add_vertex(pos[0], pos[1], pos[2]);
-                            ++globalVertexOffset;
+                            ++global_vertex_offset;
                         }
                     }
 
@@ -369,9 +369,9 @@ bool GLTFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
                     {
                         const auto& face = dd.mesh->face(i);
                         builder.add_face(
-                            primVertexOffset + face[0].value(),
-                            primVertexOffset + face[1].value(),
-                            primVertexOffset + face[2].value());
+                            prim_vertex_offset + face[0].value(),
+                            prim_vertex_offset + face[1].value(),
+                            prim_vertex_offset + face[2].value());
                     }
 
                     dd.mesh.reset();
@@ -379,35 +379,35 @@ bool GLTFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
                 }
 #endif
                 // Add vertices
-                auto posIt = primitive.attributes.find("POSITION");
-                if (posIt == primitive.attributes.end()) continue;
+                auto pos_it = primitive.attributes.find("POSITION");
+                if (pos_it == primitive.attributes.end()) continue;
 
-                const auto& posAcc = model.accessors[posIt->second];
-                const auto& posBv = model.bufferViews[posAcc.bufferView];
-                const auto& posBuf = model.buffers[posBv.buffer];
+                const auto& pos_acc = model.accessors[pos_it->second];
+                const auto& pos_bv = model.bufferViews[pos_acc.bufferView];
+                const auto& pos_buf = model.buffers[pos_bv.buffer];
                 const float* positions = reinterpret_cast<const float*>(
-                    &posBuf.data[posBv.byteOffset + posAcc.byteOffset]);
+                    &pos_buf.data[pos_bv.byteOffset + pos_acc.byteOffset]);
 
-                for (size_t i = 0; i < posAcc.count; ++i)
+                for (size_t i = 0; i < pos_acc.count; ++i)
                 {
                     builder.add_vertex(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
-                    ++globalVertexOffset;
+                    ++global_vertex_offset;
                 }
 
                 // Add faces
                 if (primitive.indices >= 0)
                 {
-                    const auto& idxAcc = model.accessors[primitive.indices];
-                    const auto& idxBv = model.bufferViews[idxAcc.bufferView];
-                    const auto& idxBuf = model.buffers[idxBv.buffer];
-                    const uint8_t* idxData = &idxBuf.data[idxBv.byteOffset + idxAcc.byteOffset];
+                    const auto& idx_acc = model.accessors[primitive.indices];
+                    const auto& idx_bv = model.bufferViews[idx_acc.bufferView];
+                    const auto& idx_buf = model.buffers[idx_bv.buffer];
+                    const uint8_t* idx_data = &idx_buf.data[idx_bv.byteOffset + idx_acc.byteOffset];
 
-                    for (size_t i = 0; i + 2 < idxAcc.count; i += 3)
+                    for (size_t i = 0; i + 2 < idx_acc.count; i += 3)
                     {
                         builder.add_face(
-                            primVertexOffset + readIndex(idxData, idxAcc.componentType, i),
-                            primVertexOffset + readIndex(idxData, idxAcc.componentType, i + 1),
-                            primVertexOffset + readIndex(idxData, idxAcc.componentType, i + 2));
+                            prim_vertex_offset + read_index(idx_data, idx_acc.componentType, i),
+                            prim_vertex_offset + read_index(idx_data, idx_acc.componentType, i + 1),
+                            prim_vertex_offset + read_index(idx_data, idx_acc.componentType, i + 2));
                     }
                 }
             }

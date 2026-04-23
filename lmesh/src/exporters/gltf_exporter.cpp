@@ -36,7 +36,7 @@
 namespace pylmesh
 {
 
-bool GLTFExporter::canSave(const std::string& filepath) const
+bool GLTFExporter::can_save(const std::string& filepath) const
 {
     return filepath.size() >= 5 && filepath.substr(filepath.size() - 5) == ".gltf";
 }
@@ -46,7 +46,7 @@ bool GLTFExporter::save(const std::string& filepath, const Mesh& mesh)
 #ifdef PYLMESH_USE_TINYGLTF
     tinygltf::Model model;
     tinygltf::Scene scene;
-    tinygltf::Mesh gltfMesh;
+    tinygltf::Mesh gltf_mesh;
     tinygltf::Primitive primitive;
     tinygltf::Buffer buffer;
 
@@ -75,43 +75,43 @@ bool GLTFExporter::save(const std::string& filepath, const Mesh& mesh)
     const auto& indices = mesh.indices;
 
     // Create buffer
-    size_t posSize = positions.size() * sizeof(float);
-    size_t idxSize = indices.size() * sizeof(uint32_t);
-    buffer.data.resize(posSize + idxSize);
-    std::memcpy(&buffer.data[0], positions.data(), posSize);
-    std::memcpy(&buffer.data[posSize], indices.data(), idxSize);
+    size_t pos_size = positions.size() * sizeof(float);
+    size_t idx_size = indices.size() * sizeof(uint32_t);
+    buffer.data.resize(pos_size + idx_size);
+    std::memcpy(&buffer.data[0], positions.data(), pos_size);
+    std::memcpy(&buffer.data[pos_size], indices.data(), idx_size);
 
     // Position buffer view
-    tinygltf::BufferView positionView;
-    positionView.buffer = 0;
-    positionView.byteOffset = 0;
-    positionView.byteLength = posSize;
-    positionView.target = TINYGLTF_TARGET_ARRAY_BUFFER;
+    tinygltf::BufferView position_view;
+    position_view.buffer = 0;
+    position_view.byteOffset = 0;
+    position_view.byteLength = pos_size;
+    position_view.target = TINYGLTF_TARGET_ARRAY_BUFFER;
 
     // Index buffer view
-    tinygltf::BufferView indexView;
-    indexView.buffer = 0;
-    indexView.byteOffset = posSize;
-    indexView.byteLength = idxSize;
-    indexView.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
+    tinygltf::BufferView index_view;
+    index_view.buffer = 0;
+    index_view.byteOffset = pos_size;
+    index_view.byteLength = idx_size;
+    index_view.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
 
     // Position accessor
-    tinygltf::Accessor positionAccessor;
-    positionAccessor.bufferView = 0;
-    positionAccessor.byteOffset = 0;
-    positionAccessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-    positionAccessor.count = mesh.vertices.size();
-    positionAccessor.type = TINYGLTF_TYPE_VEC3;
-    positionAccessor.minValues = {pMin[0], pMin[1], pMin[2]};
-    positionAccessor.maxValues = {pMax[0], pMax[1], pMax[2]};
+    tinygltf::Accessor position_accessor;
+    position_accessor.bufferView = 0;
+    position_accessor.byteOffset = 0;
+    position_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+    position_accessor.count = mesh.vertices.size();
+    position_accessor.type = TINYGLTF_TYPE_VEC3;
+    position_accessor.minValues = {pMin[0], pMin[1], pMin[2]};
+    position_accessor.maxValues = {pMax[0], pMax[1], pMax[2]};
 
     // Index accessor
-    tinygltf::Accessor indexAccessor;
-    indexAccessor.bufferView = 1;
-    indexAccessor.byteOffset = 0;
-    indexAccessor.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
-    indexAccessor.count = indices.size();
-    indexAccessor.type = TINYGLTF_TYPE_SCALAR;
+    tinygltf::Accessor index_accessor;
+    index_accessor.bufferView = 1;
+    index_accessor.byteOffset = 0;
+    index_accessor.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
+    index_accessor.count = indices.size();
+    index_accessor.type = TINYGLTF_TYPE_SCALAR;
 
     // Build primitive
     primitive.attributes["POSITION"] = 0;
@@ -119,13 +119,13 @@ bool GLTFExporter::save(const std::string& filepath, const Mesh& mesh)
     primitive.mode = TINYGLTF_MODE_TRIANGLES;
 
     // Assemble model
-    gltfMesh.primitives.push_back(primitive);
-    model.meshes.push_back(gltfMesh);
+    gltf_mesh.primitives.push_back(primitive);
+    model.meshes.push_back(gltf_mesh);
     model.buffers.push_back(buffer);
-    model.bufferViews.push_back(positionView);
-    model.bufferViews.push_back(indexView);
-    model.accessors.push_back(positionAccessor);
-    model.accessors.push_back(indexAccessor);
+    model.bufferViews.push_back(position_view);
+    model.bufferViews.push_back(index_view);
+    model.accessors.push_back(position_accessor);
+    model.accessors.push_back(index_accessor);
 
     tinygltf::Node node;
     node.mesh = 0;
@@ -142,7 +142,7 @@ bool GLTFExporter::save(const std::string& filepath, const Mesh& mesh)
 #endif
 }
 
-bool GLBExporter::canSave(const std::string& filepath) const
+bool GLBExporter::can_save(const std::string& filepath) const
 {
     return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".glb";
 }
@@ -150,15 +150,15 @@ bool GLBExporter::canSave(const std::string& filepath) const
 bool GLTFExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
 {
 #ifdef PYLMESH_USE_TINYGLTF
-    const uint32_t nVerts = mesh.vertex_count();
-    const uint32_t nFaces = mesh.face_count();
+    const uint32_t n_verts = mesh.vertex_count();
+    const uint32_t n_faces = mesh.face_count();
 
     // Dequantize all vertices and compute bounds
-    std::vector<float> positions(nVerts * 3);
+    std::vector<float> positions(n_verts * 3);
     float pMin[3] = { std::numeric_limits<float>::max(),  std::numeric_limits<float>::max(),  std::numeric_limits<float>::max() };
     float pMax[3] = {-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max() };
 
-    for (uint32_t i = 0; i < nVerts; ++i)
+    for (uint32_t i = 0; i < n_verts; ++i)
     {
         Vertex v = mesh.get_vertex(i);
         positions[i * 3]     = v.x;
@@ -170,8 +170,8 @@ bool GLTFExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
     }
 
     // Decode all face indices
-    std::vector<uint32_t> indices(nFaces * 3);
-    for (uint32_t i = 0; i < nFaces; ++i)
+    std::vector<uint32_t> indices(n_faces * 3);
+    for (uint32_t i = 0; i < n_faces; ++i)
     {
         auto f = mesh.get_face(i);
         indices[i * 3]     = f[0];
@@ -181,47 +181,47 @@ bool GLTFExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
 
     tinygltf::Model model;
     tinygltf::Scene scene;
-    tinygltf::Mesh gltfMesh;
+    tinygltf::Mesh gltf_mesh;
     tinygltf::Primitive primitive;
     tinygltf::Buffer buffer;
 
-    size_t posSize = positions.size() * sizeof(float);
-    size_t idxSize = indices.size() * sizeof(uint32_t);
-    buffer.data.resize(posSize + idxSize);
-    std::memcpy(&buffer.data[0], positions.data(), posSize);
-    std::memcpy(&buffer.data[posSize], indices.data(), idxSize);
+    size_t pos_size = positions.size() * sizeof(float);
+    size_t idx_size = indices.size() * sizeof(uint32_t);
+    buffer.data.resize(pos_size + idx_size);
+    std::memcpy(&buffer.data[0], positions.data(), pos_size);
+    std::memcpy(&buffer.data[pos_size], indices.data(), idx_size);
 
-    tinygltf::BufferView posView;
-    posView.buffer = 0; posView.byteOffset = 0; posView.byteLength = posSize;
-    posView.target = TINYGLTF_TARGET_ARRAY_BUFFER;
+    tinygltf::BufferView pos_view;
+    pos_view.buffer = 0; pos_view.byteOffset = 0; pos_view.byteLength = pos_size;
+    pos_view.target = TINYGLTF_TARGET_ARRAY_BUFFER;
 
-    tinygltf::BufferView idxView;
-    idxView.buffer = 0; idxView.byteOffset = posSize; idxView.byteLength = idxSize;
-    idxView.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
+    tinygltf::BufferView idx_view;
+    idx_view.buffer = 0; idx_view.byteOffset = pos_size; idx_view.byteLength = idx_size;
+    idx_view.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
 
-    tinygltf::Accessor posAcc;
-    posAcc.bufferView = 0; posAcc.byteOffset = 0;
-    posAcc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-    posAcc.count = nVerts; posAcc.type = TINYGLTF_TYPE_VEC3;
-    posAcc.minValues = {pMin[0], pMin[1], pMin[2]};
-    posAcc.maxValues = {pMax[0], pMax[1], pMax[2]};
+    tinygltf::Accessor pos_acc;
+    pos_acc.bufferView = 0; pos_acc.byteOffset = 0;
+    pos_acc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+    pos_acc.count = n_verts; pos_acc.type = TINYGLTF_TYPE_VEC3;
+    pos_acc.minValues = {pMin[0], pMin[1], pMin[2]};
+    pos_acc.maxValues = {pMax[0], pMax[1], pMax[2]};
 
-    tinygltf::Accessor idxAcc;
-    idxAcc.bufferView = 1; idxAcc.byteOffset = 0;
-    idxAcc.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
-    idxAcc.count = indices.size(); idxAcc.type = TINYGLTF_TYPE_SCALAR;
+    tinygltf::Accessor idx_acc;
+    idx_acc.bufferView = 1; idx_acc.byteOffset = 0;
+    idx_acc.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
+    idx_acc.count = indices.size(); idx_acc.type = TINYGLTF_TYPE_SCALAR;
 
     primitive.attributes["POSITION"] = 0;
     primitive.indices = 1;
     primitive.mode = TINYGLTF_MODE_TRIANGLES;
 
-    gltfMesh.primitives.push_back(primitive);
-    model.meshes.push_back(gltfMesh);
+    gltf_mesh.primitives.push_back(primitive);
+    model.meshes.push_back(gltf_mesh);
     model.buffers.push_back(buffer);
-    model.bufferViews.push_back(posView);
-    model.bufferViews.push_back(idxView);
-    model.accessors.push_back(posAcc);
-    model.accessors.push_back(idxAcc);
+    model.bufferViews.push_back(pos_view);
+    model.bufferViews.push_back(idx_view);
+    model.accessors.push_back(pos_acc);
+    model.accessors.push_back(idx_acc);
 
     tinygltf::Node node; node.mesh = 0;
     model.nodes.push_back(node);
@@ -242,19 +242,19 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh)
     // Use Draco compression
     tinygltf::Model model;
     tinygltf::Scene scene;
-    tinygltf::Mesh gltfMesh;
+    tinygltf::Mesh gltf_mesh;
     tinygltf::Primitive primitive;
 
     // Create Draco mesh
-    draco::Mesh dracoMesh;
-    dracoMesh.set_num_points(mesh.vertices.size());
-    dracoMesh.SetNumFaces(mesh.face_count());
+    draco::Mesh draco_mesh;
+    draco_mesh.set_num_points(mesh.vertices.size());
+    draco_mesh.SetNumFaces(mesh.face_count());
 
     // Add position attribute
-    draco::GeometryAttribute posAttr;
-    posAttr.Init(draco::GeometryAttribute::POSITION, nullptr, 3, draco::DT_FLOAT32, false,
+    draco::GeometryAttribute pos_attr;
+    pos_attr.Init(draco::GeometryAttribute::POSITION, nullptr, 3, draco::DT_FLOAT32, false,
                  sizeof(float) * 3, 0);
-    int posAttId = dracoMesh.AddAttribute(posAttr, true, mesh.vertices.size());
+    int pos_att_id = draco_mesh.AddAttribute(pos_attr, true, mesh.vertices.size());
 
     float pMin[3] = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
                      std::numeric_limits<float>::max()};
@@ -265,7 +265,7 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh)
     for (size_t i = 0; i < mesh.vertices.size(); ++i)
     {
         float pos[3] = {mesh.vertices[i].x, mesh.vertices[i].y, mesh.vertices[i].z};
-        dracoMesh.attribute(posAttId)->SetAttributeValue(draco::AttributeValueIndex(i), pos);
+        draco_mesh.attribute(pos_att_id)->SetAttributeValue(draco::AttributeValueIndex(i), pos);
         pMin[0] = std::min(pMin[0], pos[0]);
         pMin[1] = std::min(pMin[1], pos[1]);
         pMin[2] = std::min(pMin[2], pos[2]);
@@ -284,7 +284,7 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh)
             face[0] = idx[0];
             face[1] = idx[1];
             face[2] = idx[2];
-            dracoMesh.SetFace(draco::FaceIndex(i), face);
+            draco_mesh.SetFace(draco::FaceIndex(i), face);
         }
     }
 
@@ -293,40 +293,40 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh)
     encoder.SetSpeedOptions(5, 5);
     encoder.SetAttributeQuantization(draco::GeometryAttribute::POSITION, 14);
 
-    draco::EncoderBuffer encBuffer;
-    if (!encoder.EncodeMeshToBuffer(dracoMesh, &encBuffer).ok())
+    draco::EncoderBuffer enc_buffer;
+    if (!encoder.EncodeMeshToBuffer(draco_mesh, &enc_buffer).ok())
     {
         return false;
     }
 
     // Create buffer with Draco data
     tinygltf::Buffer buffer;
-    buffer.data.assign(encBuffer.data(), encBuffer.data() + encBuffer.size());
+    buffer.data.assign(enc_buffer.data(), enc_buffer.data() + enc_buffer.size());
 
     tinygltf::BufferView bufferView;
     bufferView.buffer = 0;
     bufferView.byteOffset = 0;
     bufferView.byteLength = buffer.data.size();
 
-    tinygltf::Accessor posAccessor;
-    posAccessor.bufferView = 0;
-    posAccessor.byteOffset = 0;
-    posAccessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-    posAccessor.count = mesh.vertices.size();
-    posAccessor.type = TINYGLTF_TYPE_VEC3;
-    posAccessor.minValues = {pMin[0], pMin[1], pMin[2]};
-    posAccessor.maxValues = {pMax[0], pMax[1], pMax[2]};
+    tinygltf::Accessor pos_accessor;
+    pos_accessor.bufferView = 0;
+    pos_accessor.byteOffset = 0;
+    pos_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+    pos_accessor.count = mesh.vertices.size();
+    pos_accessor.type = TINYGLTF_TYPE_VEC3;
+    pos_accessor.minValues = {pMin[0], pMin[1], pMin[2]};
+    pos_accessor.maxValues = {pMax[0], pMax[1], pMax[2]};
 
     primitive.attributes["POSITION"] = 0;
     primitive.mode = TINYGLTF_MODE_TRIANGLES;
 
     // Add Draco extension
-    tinygltf::Value::Object dracoObj;
-    dracoObj["bufferView"] = tinygltf::Value(0);
-    tinygltf::Value::Object attrsObj;
-    attrsObj["POSITION"] = tinygltf::Value(posAttId);
-    dracoObj["attributes"] = tinygltf::Value(attrsObj);
-    primitive.extensions["KHR_draco_mesh_compression"] = tinygltf::Value(dracoObj);
+    tinygltf::Value::Object draco_obj;
+    draco_obj["bufferView"] = tinygltf::Value(0);
+    tinygltf::Value::Object attrs_obj;
+    attrs_obj["POSITION"] = tinygltf::Value(pos_att_id);
+    draco_obj["attributes"] = tinygltf::Value(attrs_obj);
+    primitive.extensions["KHR_draco_mesh_compression"] = tinygltf::Value(draco_obj);
 
     // Placeholder index accessor
     tinygltf::Accessor idxAccessor;
@@ -338,14 +338,14 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh)
 
     model.buffers.push_back(buffer);
     model.bufferViews.push_back(bufferView);
-    model.accessors.push_back(posAccessor);
+    model.accessors.push_back(pos_accessor);
     model.accessors.push_back(idxAccessor);
 
     model.extensionsUsed.push_back("KHR_draco_mesh_compression");
     model.extensionsRequired.push_back("KHR_draco_mesh_compression");
 
-    gltfMesh.primitives.push_back(primitive);
-    model.meshes.push_back(gltfMesh);
+    gltf_mesh.primitives.push_back(primitive);
+    model.meshes.push_back(gltf_mesh);
 
     tinygltf::Node node;
     node.mesh = 0;
@@ -361,7 +361,7 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh)
     // Fallback to uncompressed GLB
     tinygltf::Model model;
     tinygltf::Scene scene;
-    tinygltf::Mesh gltfMesh;
+    tinygltf::Mesh gltf_mesh;
     tinygltf::Primitive primitive;
     tinygltf::Buffer buffer;
 
@@ -390,43 +390,43 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh)
     const auto& indices = mesh.indices;
 
     // Create buffer
-    size_t posSize = positions.size() * sizeof(float);
-    size_t idxSize = indices.size() * sizeof(uint32_t);
-    buffer.data.resize(posSize + idxSize);
-    std::memcpy(&buffer.data[0], positions.data(), posSize);
-    std::memcpy(&buffer.data[posSize], indices.data(), idxSize);
+    size_t pos_size = positions.size() * sizeof(float);
+    size_t idx_size = indices.size() * sizeof(uint32_t);
+    buffer.data.resize(pos_size + idx_size);
+    std::memcpy(&buffer.data[0], positions.data(), pos_size);
+    std::memcpy(&buffer.data[pos_size], indices.data(), idx_size);
 
     // Position buffer view
-    tinygltf::BufferView positionView;
-    positionView.buffer = 0;
-    positionView.byteOffset = 0;
-    positionView.byteLength = posSize;
-    positionView.target = TINYGLTF_TARGET_ARRAY_BUFFER;
+    tinygltf::BufferView position_view;
+    position_view.buffer = 0;
+    position_view.byteOffset = 0;
+    position_view.byteLength = pos_size;
+    position_view.target = TINYGLTF_TARGET_ARRAY_BUFFER;
 
     // Index buffer view
-    tinygltf::BufferView indexView;
-    indexView.buffer = 0;
-    indexView.byteOffset = posSize;
-    indexView.byteLength = idxSize;
-    indexView.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
+    tinygltf::BufferView index_view;
+    index_view.buffer = 0;
+    index_view.byteOffset = pos_size;
+    index_view.byteLength = idx_size;
+    index_view.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
 
     // Position accessor
-    tinygltf::Accessor positionAccessor;
-    positionAccessor.bufferView = 0;
-    positionAccessor.byteOffset = 0;
-    positionAccessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-    positionAccessor.count = mesh.vertices.size();
-    positionAccessor.type = TINYGLTF_TYPE_VEC3;
-    positionAccessor.minValues = {pMin[0], pMin[1], pMin[2]};
-    positionAccessor.maxValues = {pMax[0], pMax[1], pMax[2]};
+    tinygltf::Accessor position_accessor;
+    position_accessor.bufferView = 0;
+    position_accessor.byteOffset = 0;
+    position_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+    position_accessor.count = mesh.vertices.size();
+    position_accessor.type = TINYGLTF_TYPE_VEC3;
+    position_accessor.minValues = {pMin[0], pMin[1], pMin[2]};
+    position_accessor.maxValues = {pMax[0], pMax[1], pMax[2]};
 
     // Index accessor
-    tinygltf::Accessor indexAccessor;
-    indexAccessor.bufferView = 1;
-    indexAccessor.byteOffset = 0;
-    indexAccessor.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
-    indexAccessor.count = indices.size();
-    indexAccessor.type = TINYGLTF_TYPE_SCALAR;
+    tinygltf::Accessor index_accessor;
+    index_accessor.bufferView = 1;
+    index_accessor.byteOffset = 0;
+    index_accessor.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
+    index_accessor.count = indices.size();
+    index_accessor.type = TINYGLTF_TYPE_SCALAR;
 
     // Build primitive
     primitive.attributes["POSITION"] = 0;
@@ -434,13 +434,13 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh)
     primitive.mode = TINYGLTF_MODE_TRIANGLES;
 
     // Assemble model
-    gltfMesh.primitives.push_back(primitive);
-    model.meshes.push_back(gltfMesh);
+    gltf_mesh.primitives.push_back(primitive);
+    model.meshes.push_back(gltf_mesh);
     model.buffers.push_back(buffer);
-    model.bufferViews.push_back(positionView);
-    model.bufferViews.push_back(indexView);
-    model.accessors.push_back(positionAccessor);
-    model.accessors.push_back(indexAccessor);
+    model.bufferViews.push_back(position_view);
+    model.bufferViews.push_back(index_view);
+    model.accessors.push_back(position_accessor);
+    model.accessors.push_back(index_accessor);
 
     tinygltf::Node node;
     node.mesh = 0;
@@ -460,93 +460,93 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh)
 bool GLBExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
 {
 #if defined(PYLMESH_USE_TINYGLTF) && defined(PYLMESH_USE_DRACO)
-    const uint32_t nVerts = mesh.vertex_count();
-    const uint32_t nFaces = mesh.face_count();
+    const uint32_t n_verts = mesh.vertex_count();
+    const uint32_t n_faces = mesh.face_count();
 
     // Dequantize vertices and compute bounds
     float pMin[3] = { std::numeric_limits<float>::max(),  std::numeric_limits<float>::max(),  std::numeric_limits<float>::max() };
     float pMax[3] = {-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max() };
 
-    draco::Mesh dracoMesh;
-    dracoMesh.set_num_points(nVerts);
-    dracoMesh.SetNumFaces(nFaces);
+    draco::Mesh draco_mesh;
+    draco_mesh.set_num_points(n_verts);
+    draco_mesh.SetNumFaces(n_faces);
 
-    draco::GeometryAttribute posAttr;
-    posAttr.Init(draco::GeometryAttribute::POSITION, nullptr, 3, draco::DT_FLOAT32, false,
+    draco::GeometryAttribute pos_attr;
+    pos_attr.Init(draco::GeometryAttribute::POSITION, nullptr, 3, draco::DT_FLOAT32, false,
                  sizeof(float) * 3, 0);
-    int posAttId = dracoMesh.AddAttribute(posAttr, true, nVerts);
+    int pos_att_id = draco_mesh.AddAttribute(pos_attr, true, n_verts);
 
-    for (uint32_t i = 0; i < nVerts; ++i)
+    for (uint32_t i = 0; i < n_verts; ++i)
     {
         Vertex v = mesh.get_vertex(i);
         float pos[3] = {v.x, v.y, v.z};
-        dracoMesh.attribute(posAttId)->SetAttributeValue(draco::AttributeValueIndex(i), pos);
+        draco_mesh.attribute(pos_att_id)->SetAttributeValue(draco::AttributeValueIndex(i), pos);
         pMin[0] = std::min(pMin[0], v.x); pMax[0] = std::max(pMax[0], v.x);
         pMin[1] = std::min(pMin[1], v.y); pMax[1] = std::max(pMax[1], v.y);
         pMin[2] = std::min(pMin[2], v.z); pMax[2] = std::max(pMax[2], v.z);
     }
 
-    for (uint32_t i = 0; i < nFaces; ++i)
+    for (uint32_t i = 0; i < n_faces; ++i)
     {
         auto f = mesh.get_face(i);
         draco::Mesh::Face face;
         face[0] = f[0]; face[1] = f[1]; face[2] = f[2];
-        dracoMesh.SetFace(draco::FaceIndex(i), face);
+        draco_mesh.SetFace(draco::FaceIndex(i), face);
     }
 
     draco::Encoder encoder;
     encoder.SetSpeedOptions(5, 5);
     encoder.SetAttributeQuantization(draco::GeometryAttribute::POSITION, 14);
 
-    draco::EncoderBuffer encBuffer;
-    if (!encoder.EncodeMeshToBuffer(dracoMesh, &encBuffer).ok())
+    draco::EncoderBuffer enc_buffer;
+    if (!encoder.EncodeMeshToBuffer(draco_mesh, &enc_buffer).ok())
         return false;
 
     tinygltf::Model model;
     tinygltf::Scene scene;
-    tinygltf::Mesh gltfMesh;
+    tinygltf::Mesh gltf_mesh;
     tinygltf::Primitive primitive;
 
     tinygltf::Buffer buffer;
-    buffer.data.assign(encBuffer.data(), encBuffer.data() + encBuffer.size());
+    buffer.data.assign(enc_buffer.data(), enc_buffer.data() + enc_buffer.size());
 
     tinygltf::BufferView bufferView;
     bufferView.buffer = 0; bufferView.byteOffset = 0;
     bufferView.byteLength = buffer.data.size();
 
-    tinygltf::Accessor posAcc;
-    posAcc.bufferView = 0; posAcc.byteOffset = 0;
-    posAcc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-    posAcc.count = nVerts; posAcc.type = TINYGLTF_TYPE_VEC3;
-    posAcc.minValues = {pMin[0], pMin[1], pMin[2]};
-    posAcc.maxValues = {pMax[0], pMax[1], pMax[2]};
+    tinygltf::Accessor pos_acc;
+    pos_acc.bufferView = 0; pos_acc.byteOffset = 0;
+    pos_acc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+    pos_acc.count = n_verts; pos_acc.type = TINYGLTF_TYPE_VEC3;
+    pos_acc.minValues = {pMin[0], pMin[1], pMin[2]};
+    pos_acc.maxValues = {pMax[0], pMax[1], pMax[2]};
 
     primitive.attributes["POSITION"] = 0;
     primitive.mode = TINYGLTF_MODE_TRIANGLES;
 
-    tinygltf::Value::Object dracoObj;
-    dracoObj["bufferView"] = tinygltf::Value(0);
-    tinygltf::Value::Object attrsObj;
-    attrsObj["POSITION"] = tinygltf::Value(posAttId);
-    dracoObj["attributes"] = tinygltf::Value(attrsObj);
-    primitive.extensions["KHR_draco_mesh_compression"] = tinygltf::Value(dracoObj);
+    tinygltf::Value::Object draco_obj;
+    draco_obj["bufferView"] = tinygltf::Value(0);
+    tinygltf::Value::Object attrs_obj;
+    attrs_obj["POSITION"] = tinygltf::Value(pos_att_id);
+    draco_obj["attributes"] = tinygltf::Value(attrs_obj);
+    primitive.extensions["KHR_draco_mesh_compression"] = tinygltf::Value(draco_obj);
 
-    tinygltf::Accessor idxAcc;
-    idxAcc.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
-    idxAcc.count = nFaces * 3;
-    idxAcc.type = TINYGLTF_TYPE_SCALAR;
-    idxAcc.bufferView = -1;
+    tinygltf::Accessor idx_acc;
+    idx_acc.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
+    idx_acc.count = n_faces * 3;
+    idx_acc.type = TINYGLTF_TYPE_SCALAR;
+    idx_acc.bufferView = -1;
     primitive.indices = 1;
 
     model.buffers.push_back(buffer);
     model.bufferViews.push_back(bufferView);
-    model.accessors.push_back(posAcc);
-    model.accessors.push_back(idxAcc);
+    model.accessors.push_back(pos_acc);
+    model.accessors.push_back(idx_acc);
     model.extensionsUsed.push_back("KHR_draco_mesh_compression");
     model.extensionsRequired.push_back("KHR_draco_mesh_compression");
 
-    gltfMesh.primitives.push_back(primitive);
-    model.meshes.push_back(gltfMesh);
+    gltf_mesh.primitives.push_back(primitive);
+    model.meshes.push_back(gltf_mesh);
 
     tinygltf::Node node; node.mesh = 0;
     model.nodes.push_back(node);
@@ -558,14 +558,14 @@ bool GLBExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
     return writer.WriteGltfSceneToFile(&model, filepath, false, true, true, true);
 #elif defined(PYLMESH_USE_TINYGLTF)
     // Fallback: save as uncompressed GLB via GLTF exporter path
-    const uint32_t nVerts = mesh.vertex_count();
-    const uint32_t nFaces = mesh.face_count();
+    const uint32_t n_verts = mesh.vertex_count();
+    const uint32_t n_faces = mesh.face_count();
 
-    std::vector<float> positions(nVerts * 3);
+    std::vector<float> positions(n_verts * 3);
     float pMin[3] = { std::numeric_limits<float>::max(),  std::numeric_limits<float>::max(),  std::numeric_limits<float>::max() };
     float pMax[3] = {-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max() };
 
-    for (uint32_t i = 0; i < nVerts; ++i)
+    for (uint32_t i = 0; i < n_verts; ++i)
     {
         Vertex v = mesh.get_vertex(i);
         positions[i * 3] = v.x; positions[i * 3 + 1] = v.y; positions[i * 3 + 2] = v.z;
@@ -574,8 +574,8 @@ bool GLBExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
         pMin[2] = std::min(pMin[2], v.z); pMax[2] = std::max(pMax[2], v.z);
     }
 
-    std::vector<uint32_t> indices(nFaces * 3);
-    for (uint32_t i = 0; i < nFaces; ++i)
+    std::vector<uint32_t> indices(n_faces * 3);
+    for (uint32_t i = 0; i < n_faces; ++i)
     {
         auto f = mesh.get_face(i);
         indices[i * 3] = f[0]; indices[i * 3 + 1] = f[1]; indices[i * 3 + 2] = f[2];
@@ -583,47 +583,47 @@ bool GLBExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
 
     tinygltf::Model model;
     tinygltf::Scene scene;
-    tinygltf::Mesh gltfMesh;
+    tinygltf::Mesh gltf_mesh;
     tinygltf::Primitive primitive;
     tinygltf::Buffer buffer;
 
-    size_t posSize = positions.size() * sizeof(float);
-    size_t idxSize = indices.size() * sizeof(uint32_t);
-    buffer.data.resize(posSize + idxSize);
-    std::memcpy(&buffer.data[0], positions.data(), posSize);
-    std::memcpy(&buffer.data[posSize], indices.data(), idxSize);
+    size_t pos_size = positions.size() * sizeof(float);
+    size_t idx_size = indices.size() * sizeof(uint32_t);
+    buffer.data.resize(pos_size + idx_size);
+    std::memcpy(&buffer.data[0], positions.data(), pos_size);
+    std::memcpy(&buffer.data[pos_size], indices.data(), idx_size);
 
-    tinygltf::BufferView posView;
-    posView.buffer = 0; posView.byteOffset = 0; posView.byteLength = posSize;
-    posView.target = TINYGLTF_TARGET_ARRAY_BUFFER;
+    tinygltf::BufferView pos_view;
+    pos_view.buffer = 0; pos_view.byteOffset = 0; pos_view.byteLength = pos_size;
+    pos_view.target = TINYGLTF_TARGET_ARRAY_BUFFER;
 
-    tinygltf::BufferView idxView;
-    idxView.buffer = 0; idxView.byteOffset = posSize; idxView.byteLength = idxSize;
-    idxView.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
+    tinygltf::BufferView idx_view;
+    idx_view.buffer = 0; idx_view.byteOffset = pos_size; idx_view.byteLength = idx_size;
+    idx_view.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
 
-    tinygltf::Accessor posAcc;
-    posAcc.bufferView = 0; posAcc.byteOffset = 0;
-    posAcc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-    posAcc.count = nVerts; posAcc.type = TINYGLTF_TYPE_VEC3;
-    posAcc.minValues = {pMin[0], pMin[1], pMin[2]};
-    posAcc.maxValues = {pMax[0], pMax[1], pMax[2]};
+    tinygltf::Accessor pos_acc;
+    pos_acc.bufferView = 0; pos_acc.byteOffset = 0;
+    pos_acc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+    pos_acc.count = n_verts; pos_acc.type = TINYGLTF_TYPE_VEC3;
+    pos_acc.minValues = {pMin[0], pMin[1], pMin[2]};
+    pos_acc.maxValues = {pMax[0], pMax[1], pMax[2]};
 
-    tinygltf::Accessor idxAcc;
-    idxAcc.bufferView = 1; idxAcc.byteOffset = 0;
-    idxAcc.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
-    idxAcc.count = indices.size(); idxAcc.type = TINYGLTF_TYPE_SCALAR;
+    tinygltf::Accessor idx_acc;
+    idx_acc.bufferView = 1; idx_acc.byteOffset = 0;
+    idx_acc.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
+    idx_acc.count = indices.size(); idx_acc.type = TINYGLTF_TYPE_SCALAR;
 
     primitive.attributes["POSITION"] = 0;
     primitive.indices = 1;
     primitive.mode = TINYGLTF_MODE_TRIANGLES;
 
-    gltfMesh.primitives.push_back(primitive);
-    model.meshes.push_back(gltfMesh);
+    gltf_mesh.primitives.push_back(primitive);
+    model.meshes.push_back(gltf_mesh);
     model.buffers.push_back(buffer);
-    model.bufferViews.push_back(posView);
-    model.bufferViews.push_back(idxView);
-    model.accessors.push_back(posAcc);
-    model.accessors.push_back(idxAcc);
+    model.bufferViews.push_back(pos_view);
+    model.bufferViews.push_back(idx_view);
+    model.accessors.push_back(pos_acc);
+    model.accessors.push_back(idx_acc);
 
     tinygltf::Node node; node.mesh = 0;
     model.nodes.push_back(node);

@@ -25,7 +25,7 @@
 namespace pylmesh
 {
 
-bool STLExporter::canSave(const std::string& filepath) const
+bool STLExporter::can_save(const std::string& filepath) const
 {
     return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".stl";
 }
@@ -68,8 +68,8 @@ bool STLExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
 
     file << "solid mesh\n";
 
-    const uint32_t nFaces = mesh.face_count();
-    for (uint32_t i = 0; i < nFaces; ++i)
+    const uint32_t n_faces = mesh.face_count();
+    for (uint32_t i = 0; i < n_faces; ++i)
     {
         auto f = mesh.get_face(i);
         Vertex v0 = mesh.get_vertex(f[0]);

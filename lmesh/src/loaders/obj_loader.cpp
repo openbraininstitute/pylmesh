@@ -36,7 +36,7 @@
 namespace pylmesh
 {
 
-bool OBJLoader::canLoad(const std::string& filepath) const
+bool OBJLoader::can_load(const std::string& filepath) const
 {
     return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".obj";
 }
@@ -56,23 +56,23 @@ bool OBJLoader::load(const std::string& filepath, Mesh& mesh)
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────
 
-    auto skipLine = [&](const char*& p) {
+    auto skip_line = [&](const char*& p) {
         const void* nl = memchr(p, '\n', static_cast<size_t>(end - p));
         p = nl ? static_cast<const char*>(nl) + 1 : end;
     };
 
-    auto skipSpaces = [](const char*& p) {
+    auto skip_spaces = [](const char*& p) {
         while (*p == ' ' || *p == '\t') ++p;
     };
 
-    auto parseFloat = [&](const char*& p) -> float {
+    auto parse_float = [&](const char*& p) -> float {
         float val = 0.0f;
         auto res = fast_float::from_chars(p, end, val);
         p = res.ptr;
         return val;
     };
 
-    auto parseIndex = [](const char*& p) -> int {
+    auto parse_index = [](const char*& p) -> int {
         bool neg = (*p == '-');
         if (neg) ++p;
         int val = 0;
@@ -86,11 +86,11 @@ bool OBJLoader::load(const std::string& filepath, Mesh& mesh)
     //          memchr jumps to '\n' in SIMD chunks — very cheap per line
     // ─────────────────────────────────────────────────────────────────────────
 
-    size_t vCount     = 0;
-    size_t nCount     = 0;
-    size_t tCount     = 0;
-    size_t faceCount  = 0;
-    size_t indexCount = 0;
+    size_t v_count     = 0;
+    size_t n_count     = 0;
+    size_t t_count     = 0;
+    size_t face_count  = 0;
+    size_t index_count = 0;
 
     for (const char* p = begin; p < end; )
     {
@@ -99,13 +99,13 @@ bool OBJLoader::load(const std::string& filepath, Mesh& mesh)
 
         if (p[0] == 'v')
         {
-            if      (p[1] == ' ') ++vCount;
-            else if (p[1] == 'n') ++nCount;
-            else if (p[1] == 't') ++tCount;
+            if      (p[1] == ' ') ++v_count;
+            else if (p[1] == 'n') ++n_count;
+            else if (p[1] == 't') ++t_count;
         }
         else if (p[0] == 'f' && (p[1] == ' ' || p[1] == '\t'))
         {
-            ++faceCount;
+            ++face_count;
 
             const char* q = p + 2;
             while (q < end && *q != '\n' && *q != '\r')
@@ -114,35 +114,35 @@ bool OBJLoader::load(const std::string& filepath, Mesh& mesh)
                 while (q < end && (*q == ' ' || *q == '\t')) ++q;
                 if (*q == '\n' || *q == '\r' || q >= end) break;
 
-                ++indexCount;
+                ++index_count;
 
                 // skip the full token (v, v/vt, v/vt/vn, v//vn) — no parsing
                 while (q < end && *q != ' ' && *q != '\t' && *q != '\n' && *q != '\r') ++q;
             }
         }
 
-        skipLine(p);
+        skip_line(p);
     }
 
     // ── Exact allocation — no over-reservation, no shrink_to_fit needed ──────
 
-    mesh.vertices.resize(vCount);
-    mesh.normals.resize(nCount);       // 0 bytes if mesh has no normals
-    mesh.texcoords.resize(tCount);     // 0 bytes if mesh has no texcoords
-    mesh.indices.resize(indexCount);
-    mesh.faceOffsets.resize(faceCount + 1);
-    mesh.faceOffsets[0] = 0;
+    mesh.vertices.resize(v_count);
+    mesh.normals.resize(n_count);       // 0 bytes if mesh has no normals
+    mesh.texcoords.resize(t_count);     // 0 bytes if mesh has no texcoords
+    mesh.indices.resize(index_count);
+    mesh.face_offsets.resize(face_count + 1);
+    mesh.face_offsets[0] = 0;
 
     // ─────────────────────────────────────────────────────────────────────────
     // Pass 2 — parse and fill, direct indexed writes, no push_back
     //          page cache is warm from Pass 1
     // ─────────────────────────────────────────────────────────────────────────
 
-    size_t vIdx = 0;
-    size_t nIdx = 0;
-    size_t tIdx = 0;
-    size_t iIdx = 0;
-    size_t fIdx = 0;
+    size_t v_idx = 0;
+    size_t n_idx = 0;
+    size_t t_idx = 0;
+    size_t i_idx = 0;
+    size_t f_idx = 0;
 
     for (const char* p = begin; p < end; )
     {
@@ -154,27 +154,27 @@ bool OBJLoader::load(const std::string& filepath, Mesh& mesh)
             if (p[1] == ' ') [[likely]]
             {
                 p += 2;
-                Vertex& v = mesh.vertices[vIdx++];
-                v.x = parseFloat(p); skipSpaces(p);
-                v.y = parseFloat(p); skipSpaces(p);
-                v.z = parseFloat(p);
+                Vertex& v = mesh.vertices[v_idx++];
+                v.x = parse_float(p); skip_spaces(p);
+                v.y = parse_float(p); skip_spaces(p);
+                v.z = parse_float(p);
             }
             else if (p[1] == 'n')
             {
                 p += 3;
-                Normal& n = mesh.normals[nIdx++];
-                n.nx = parseFloat(p); skipSpaces(p);
-                n.ny = parseFloat(p); skipSpaces(p);
-                n.nz = parseFloat(p);
+                Normal& n = mesh.normals[n_idx++];
+                n.nx = parse_float(p); skip_spaces(p);
+                n.ny = parse_float(p); skip_spaces(p);
+                n.nz = parse_float(p);
             }
             else if (p[1] == 't')
             {
                 p += 3;
-                TexCoord& t = mesh.texcoords[tIdx++];
-                t.u = parseFloat(p); skipSpaces(p);
-                t.v = parseFloat(p);
+                TexCoord& t = mesh.texcoords[t_idx++];
+                t.u = parse_float(p); skip_spaces(p);
+                t.v = parse_float(p);
             }
-            else { skipLine(p); continue; }
+            else { skip_line(p); continue; }
         }
         else if (p[0] == 'f' && (p[1] == ' ' || p[1] == '\t'))
         {
@@ -182,35 +182,35 @@ bool OBJLoader::load(const std::string& filepath, Mesh& mesh)
 
             while (p < end && *p != '\n' && *p != '\r')
             {
-                skipSpaces(p);
+                skip_spaces(p);
                 if (*p == '\n' || *p == '\r' || p >= end) break;
 
-                int vi = parseIndex(p);
+                int vi = parse_index(p);
                 int ti = 0;
 
                 if (*p == '/')
                 {
                     ++p;
-                    if (*p != '/') ti = parseIndex(p);
-                    if (*p == '/') { ++p; parseIndex(p); /* normal unused */ }
+                    if (*p != '/') ti = parse_index(p);
+                    if (*p == '/') { ++p; parse_index(p); /* normal unused */ }
                 }
 
                 // Resolve negative (relative) OBJ indices
-                if (vi < 0) vi = static_cast<int>(vIdx) + vi + 1;
-                if (ti < 0) ti = static_cast<int>(tIdx) + ti + 1;
+                if (vi < 0) vi = static_cast<int>(v_idx) + vi + 1;
+                if (ti < 0) ti = static_cast<int>(t_idx) + ti + 1;
 
-                mesh.indices[iIdx++] = static_cast<uint32_t>(vi - 1);
+                mesh.indices[i_idx++] = static_cast<uint32_t>(vi - 1);
                 (void)ti;
             }
 
-            mesh.faceOffsets[++fIdx] = static_cast<uint32_t>(iIdx);
+            mesh.face_offsets[++f_idx] = static_cast<uint32_t>(i_idx);
         }
         else [[unlikely]]
         {
-            skipLine(p); continue;
+            skip_line(p); continue;
         }
 
-        skipLine(p);
+        skip_line(p);
     }
 
     return !mesh.is_empty();
@@ -231,18 +231,18 @@ bool OBJLoader::load(const std::string& filepath,
     // -----------------------------------------------------------------------
     //  Helpers
     // -----------------------------------------------------------------------
-    auto skipLine = [&](const char*& p)
+    auto skip_line = [&](const char*& p)
     {
         const void* nl = std::memchr(p, '\n', static_cast<size_t>(end - p));
         p = nl ? static_cast<const char*>(nl) + 1 : end;
     };
  
-    auto skipSpaces = [](const char*& p)
+    auto skip_spaces = [](const char*& p)
     {
         while (*p == ' ' || *p == '\t') ++p;
     };
  
-    auto parseFloat = [&](const char*& p) -> float
+    auto parse_float = [&](const char*& p) -> float
     {
         float val = 0.f;
         auto  res = fast_float::from_chars(p, end, val);
@@ -250,7 +250,7 @@ bool OBJLoader::load(const std::string& filepath,
         return val;
     };
  
-    auto parseIndex = [](const char*& p) -> int
+    auto parse_index = [](const char*& p) -> int
     {
         const bool neg = (*p == '-');
         if (neg) ++p;
@@ -260,7 +260,7 @@ bool OBJLoader::load(const std::string& filepath,
         return neg ? -val : val;
     };
  
-    auto skipLinePrefix = [](const char*& p, const char* end_)
+    auto skip_line_prefix = [](const char*& p, const char* end_)
     {
         while (p < end_ && (*p == ' ' || *p == '\t' || *p == '\r')) ++p;
     };
@@ -274,19 +274,19 @@ bool OBJLoader::load(const std::string& filepath,
     Vertex bmax{ std::numeric_limits<float>::lowest(),
                  std::numeric_limits<float>::lowest(),
                  std::numeric_limits<float>::lowest() };
-    size_t vCount = 0;
+    size_t v_count = 0;
  
     for (const char* p = begin; p < end; )
     {
-        skipLinePrefix(p, end);
+        skip_line_prefix(p, end);
         if (p >= end) break;
  
         if (p[0] == 'v' && p[1] == ' ')
         {
             p += 2;
-            const float x = parseFloat(p); skipSpaces(p);
-            const float y = parseFloat(p); skipSpaces(p);
-            const float z = parseFloat(p);
+            const float x = parse_float(p); skip_spaces(p);
+            const float y = parse_float(p); skip_spaces(p);
+            const float z = parse_float(p);
  
             if (x < bmin.x) bmin.x = x;
             if (y < bmin.y) bmin.y = y;
@@ -294,69 +294,69 @@ bool OBJLoader::load(const std::string& filepath,
             if (x > bmax.x) bmax.x = x;
             if (y > bmax.y) bmax.y = y;
             if (z > bmax.z) bmax.z = z;
-            ++vCount;
+            ++v_count;
         }
  
-        skipLine(p);
+        skip_line(p);
     }
  
-    if (vCount == 0)
+    if (v_count == 0)
         return false;
  
     // -----------------------------------------------------------------------
     //  Pass 2 — populate builder
     // -----------------------------------------------------------------------
     QuantizedMeshBuilder builder(bmin, bmax, bits, /*dedup=*/false);
-    builder.reserve(vCount, vCount * 2);
+    builder.reserve(v_count, v_count * 2);
  
-    size_t vIdx = 0;
-    std::vector<uint32_t> faceSlots;
-    faceSlots.reserve(4);
+    size_t v_idx = 0;
+    std::vector<uint32_t> face_slots;
+    face_slots.reserve(4);
  
     for (const char* p = begin; p < end; )
     {
-        skipLinePrefix(p, end);
+        skip_line_prefix(p, end);
         if (p >= end) break;
  
         if (p[0] == 'v' && p[1] == ' ') [[likely]]
         {
             p += 2;
-            const float x = parseFloat(p); skipSpaces(p);
-            const float y = parseFloat(p); skipSpaces(p);
-            const float z = parseFloat(p);
+            const float x = parse_float(p); skip_spaces(p);
+            const float y = parse_float(p); skip_spaces(p);
+            const float z = parse_float(p);
             builder.add_vertex(x, y, z);
-            ++vIdx;
+            ++v_idx;
         }
         else if (p[0] == 'f' && (p[1] == ' ' || p[1] == '\t'))
         {
             p += 2;
-            faceSlots.clear();
+            face_slots.clear();
  
             while (p < end && *p != '\n' && *p != '\r')
             {
-                skipSpaces(p);
+                skip_spaces(p);
                 if (p >= end || *p == '\n' || *p == '\r') break;
  
-                int vi = parseIndex(p);
+                int vi = parse_index(p);
  
                 if (*p == '/')
                 {
                     ++p;
-                    if (*p != '/') parseIndex(p);
-                    if (*p == '/') { ++p; parseIndex(p); }
+                    if (*p != '/') parse_index(p);
+                    if (*p == '/') { ++p; parse_index(p); }
                 }
  
                 if (vi < 0)
-                    vi = static_cast<int>(vIdx) + vi + 1;
+                    vi = static_cast<int>(v_idx) + vi + 1;
  
-                faceSlots.push_back(static_cast<uint32_t>(vi - 1));
+                face_slots.push_back(static_cast<uint32_t>(vi - 1));
             }
  
-            for (size_t i = 1; i + 1 < faceSlots.size(); ++i)
-                builder.add_face(faceSlots[0], faceSlots[i], faceSlots[i + 1]);
+            for (size_t i = 1; i + 1 < face_slots.size(); ++i)
+                builder.add_face(face_slots[0], face_slots[i], face_slots[i + 1]);
         }
  
-        skipLine(p);
+        skip_line(p);
     }
  
     out_mesh = std::move(builder).build();
@@ -372,73 +372,73 @@ bool OBJLoader::load(const std::string& filepath, UltraQuantizedMesh& out_mesh)
     const char* const begin = file.data;
     const char* const end   = begin + file.size;
 
-    auto skipLine = [&](const char*& p) {
+    auto skip_line = [&](const char*& p) {
         const void* nl = std::memchr(p, '\n', size_t(end - p));
         p = nl ? static_cast<const char*>(nl) + 1 : end;
     };
-    auto skipSpaces = [](const char*& p) { while (*p == ' ' || *p == '\t') ++p; };
-    auto parseFloat = [&](const char*& p) -> float {
+    auto skip_spaces = [](const char*& p) { while (*p == ' ' || *p == '\t') ++p; };
+    auto parse_float = [&](const char*& p) -> float {
         float val = 0.f; auto res = fast_float::from_chars(p, end, val); p = res.ptr; return val;
     };
-    auto parseIndex = [](const char*& p) -> int {
+    auto parse_index = [](const char*& p) -> int {
         bool neg = (*p == '-'); if (neg) ++p;
         int val = 0; while (*p >= '0' && *p <= '9') val = val * 10 + (*p++ - '0');
         return neg ? -val : val;
     };
-    auto skipLinePrefix = [](const char*& p, const char* e) {
+    auto skip_line_prefix = [](const char*& p, const char* e) {
         while (p < e && (*p == ' ' || *p == '\t' || *p == '\r')) ++p;
     };
 
     Vertex bmin{ std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max() };
     Vertex bmax{ std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest() };
-    size_t vCount = 0;
+    size_t v_count = 0;
 
     for (const char* p = begin; p < end; ) {
-        skipLinePrefix(p, end); if (p >= end) break;
+        skip_line_prefix(p, end); if (p >= end) break;
         if (p[0] == 'v' && p[1] == ' ') {
             p += 2;
-            float x = parseFloat(p); skipSpaces(p);
-            float y = parseFloat(p); skipSpaces(p);
-            float z = parseFloat(p);
+            float x = parse_float(p); skip_spaces(p);
+            float y = parse_float(p); skip_spaces(p);
+            float z = parse_float(p);
             if (x < bmin.x) bmin.x = x; if (x > bmax.x) bmax.x = x;
             if (y < bmin.y) bmin.y = y; if (y > bmax.y) bmax.y = y;
             if (z < bmin.z) bmin.z = z; if (z > bmax.z) bmax.z = z;
-            ++vCount;
+            ++v_count;
         }
-        skipLine(p);
+        skip_line(p);
     }
-    if (vCount == 0) return false;
+    if (v_count == 0) return false;
 
     UltraQuantizedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/false);
-    builder.reserve(vCount, vCount * 2);
+    builder.reserve(v_count, v_count * 2);
 
-    size_t vIdx = 0;
-    std::vector<uint32_t> faceSlots;
-    faceSlots.reserve(4);
+    size_t v_idx = 0;
+    std::vector<uint32_t> face_slots;
+    face_slots.reserve(4);
 
     for (const char* p = begin; p < end; ) {
-        skipLinePrefix(p, end); if (p >= end) break;
+        skip_line_prefix(p, end); if (p >= end) break;
         if (p[0] == 'v' && p[1] == ' ') [[likely]] {
             p += 2;
-            float x = parseFloat(p); skipSpaces(p);
-            float y = parseFloat(p); skipSpaces(p);
-            float z = parseFloat(p);
+            float x = parse_float(p); skip_spaces(p);
+            float y = parse_float(p); skip_spaces(p);
+            float z = parse_float(p);
             builder.add_vertex(x, y, z);
-            ++vIdx;
+            ++v_idx;
         } else if (p[0] == 'f' && (p[1] == ' ' || p[1] == '\t')) {
-            p += 2; faceSlots.clear();
+            p += 2; face_slots.clear();
             while (p < end && *p != '\n' && *p != '\r') {
-                skipSpaces(p);
+                skip_spaces(p);
                 if (p >= end || *p == '\n' || *p == '\r') break;
-                int vi = parseIndex(p);
-                if (*p == '/') { ++p; if (*p != '/') parseIndex(p); if (*p == '/') { ++p; parseIndex(p); } }
-                if (vi < 0) vi = int(vIdx) + vi + 1;
-                faceSlots.push_back(uint32_t(vi - 1));
+                int vi = parse_index(p);
+                if (*p == '/') { ++p; if (*p != '/') parse_index(p); if (*p == '/') { ++p; parse_index(p); } }
+                if (vi < 0) vi = int(v_idx) + vi + 1;
+                face_slots.push_back(uint32_t(vi - 1));
             }
-            for (size_t i = 1; i + 1 < faceSlots.size(); ++i)
-                builder.add_face(faceSlots[0], faceSlots[i], faceSlots[i + 1]);
+            for (size_t i = 1; i + 1 < face_slots.size(); ++i)
+                builder.add_face(face_slots[0], face_slots[i], face_slots[i + 1]);
         }
-        skipLine(p);
+        skip_line(p);
     }
 
     out_mesh = std::move(builder).build();

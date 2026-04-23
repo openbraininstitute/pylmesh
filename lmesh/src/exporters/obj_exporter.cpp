@@ -25,7 +25,7 @@
 namespace pylmesh
 {
 
-bool OBJExporter::canSave(const std::string& filepath) const
+bool OBJExporter::can_save(const std::string& filepath) const
 {
     return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".obj";
 }
@@ -76,16 +76,16 @@ bool OBJExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
 
     file << "# OBJ file exported by pylmesh\n";
 
-    const uint32_t nVerts = mesh.vertex_count();
-    const uint32_t nFaces = mesh.face_count();
+    const uint32_t n_verts = mesh.vertex_count();
+    const uint32_t n_faces = mesh.face_count();
 
-    for (uint32_t i = 0; i < nVerts; ++i)
+    for (uint32_t i = 0; i < n_verts; ++i)
     {
         Vertex v = mesh.get_vertex(i);
         file << "v " << v.x << " " << v.y << " " << v.z << "\n";
     }
 
-    for (uint32_t i = 0; i < nFaces; ++i)
+    for (uint32_t i = 0; i < n_faces; ++i)
     {
         auto f = mesh.get_face(i);
         file << "f " << (f[0] + 1) << " " << (f[1] + 1) << " " << (f[2] + 1) << "\n";

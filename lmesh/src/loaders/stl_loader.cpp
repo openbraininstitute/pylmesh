@@ -26,7 +26,7 @@
 namespace pylmesh
 {
 
-bool STLLoader::canLoad(const std::string& filepath) const
+bool STLLoader::can_load(const std::string& filepath) const
 {
     return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".stl";
 }
@@ -76,7 +76,7 @@ bool STLLoader::load(const std::string& filepath, QuantizedMesh& mesh)
     Vertex bmax{ std::numeric_limits<float>::lowest(),
                  std::numeric_limits<float>::lowest(),
                  std::numeric_limits<float>::lowest() };
-    size_t vCount = 0;
+    size_t v_count = 0;
 
     std::string line;
     while (std::getline(file, line))
@@ -91,22 +91,22 @@ bool STLLoader::load(const std::string& filepath, QuantizedMesh& mesh)
             if (x < bmin.x) bmin.x = x; if (x > bmax.x) bmax.x = x;
             if (y < bmin.y) bmin.y = y; if (y > bmax.y) bmax.y = y;
             if (z < bmin.z) bmin.z = z; if (z > bmax.z) bmax.z = z;
-            ++vCount;
+            ++v_count;
         }
     }
 
-    if (vCount == 0)
+    if (v_count == 0)
         return false;
 
     // STL has duplicate vertices — dedup=true
     QuantizedMeshBuilder builder(bmin, bmax, AxisBits::uniform(16), /*dedup=*/true);
-    builder.reserve(vCount, vCount / 3);
+    builder.reserve(v_count, v_count / 3);
 
     file.clear();
     file.seekg(0);
 
     std::vector<uint32_t> slots;
-    slots.reserve(vCount);
+    slots.reserve(v_count);
     while (std::getline(file, line))
     {
         std::istringstream iss(line);
@@ -134,7 +134,7 @@ bool STLLoader::load(const std::string& filepath, UltraQuantizedMesh& mesh)
 
     Vertex bmin{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
     Vertex bmax{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
-    size_t vCount = 0;
+    size_t v_count = 0;
     std::string line;
 
     while (std::getline(file, line)) {
@@ -144,16 +144,16 @@ bool STLLoader::load(const std::string& filepath, UltraQuantizedMesh& mesh)
             if (x < bmin.x) bmin.x = x; if (x > bmax.x) bmax.x = x;
             if (y < bmin.y) bmin.y = y; if (y > bmax.y) bmax.y = y;
             if (z < bmin.z) bmin.z = z; if (z > bmax.z) bmax.z = z;
-            ++vCount;
+            ++v_count;
         }
     }
-    if (vCount == 0) return false;
+    if (v_count == 0) return false;
 
     UltraQuantizedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/true);
-    builder.reserve(vCount, vCount / 3);
+    builder.reserve(v_count, v_count / 3);
 
     file.clear(); file.seekg(0);
-    std::vector<uint32_t> slots; slots.reserve(vCount);
+    std::vector<uint32_t> slots; slots.reserve(v_count);
     while (std::getline(file, line)) {
         std::istringstream iss(line); std::string kw; iss >> kw;
         if (kw == "vertex") {

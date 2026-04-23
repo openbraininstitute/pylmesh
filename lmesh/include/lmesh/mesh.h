@@ -41,10 +41,10 @@ class Mesh : public BaseMesh
     // Flat index buffer: [i0, i1, i2,  i0, i1, i2, i3,  ...]
     std::vector<uint32_t> indices;
 
-    // faceOffsets[f] = start of face f in indices[]
-    // faceOffsets[f+1] - faceOffsets[f] = vertex count of face f
-    // size = faceCount + 1
-    std::vector<uint32_t> faceOffsets;
+    // face_offsets[f] = start of face f in indices[]
+    // face_offsets[f+1] - face_offsets[f] = vertex count of face f
+    // size = face_count + 1
+    std::vector<uint32_t> face_offsets;
 
     void clear();
     bool is_empty() const;

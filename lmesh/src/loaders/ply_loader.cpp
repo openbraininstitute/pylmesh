@@ -26,7 +26,7 @@
 namespace pylmesh
 {
 
-bool PLYLoader::canLoad(const std::string& filepath) const
+bool PLYLoader::can_load(const std::string& filepath) const
 {
     return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".ply";
 }
@@ -39,8 +39,8 @@ bool PLYLoader::load(const std::string& filepath, Mesh& mesh)
 
     mesh.clear();
     std::string line;
-    int vertexCount = 0, faceCount = 0;
-    bool headerDone = false;
+    int vertex_count = 0, face_count = 0;
+    bool header_done = false;
 
     while (std::getline(file, line))
     {
@@ -54,20 +54,20 @@ bool PLYLoader::load(const std::string& filepath, Mesh& mesh)
             int count;
             iss >> type >> count;
             if (type == "vertex")
-                vertexCount = count;
+                vertex_count = count;
             if (type == "face")
-                faceCount = count;
+                face_count = count;
         }
         else if (keyword == "end_header")
         {
-            headerDone = true;
+            header_done = true;
             break;
         }
     }
 
-    if (headerDone)
+    if (header_done)
     {
-        for (int i = 0; i < vertexCount; ++i)
+        for (int i = 0; i < vertex_count; ++i)
         {
             Vertex v;
             file >> v.x >> v.y >> v.z;
@@ -75,7 +75,7 @@ bool PLYLoader::load(const std::string& filepath, Mesh& mesh)
             std::getline(file, line);
         }
 
-        for (int i = 0; i < faceCount; ++i)
+        for (int i = 0; i < face_count; ++i)
         {
             int n;
             file >> n;
@@ -98,7 +98,7 @@ bool PLYLoader::load(const std::string& filepath, QuantizedMesh& mesh)
         return false;
 
     std::string line;
-    int vertexCount = 0, faceCount = 0;
+    int vertex_count = 0, face_count = 0;
 
     // Parse header
     while (std::getline(file, line))
@@ -110,18 +110,18 @@ bool PLYLoader::load(const std::string& filepath, QuantizedMesh& mesh)
         {
             std::string type; int count;
             iss >> type >> count;
-            if (type == "vertex") vertexCount = count;
-            if (type == "face")   faceCount = count;
+            if (type == "vertex") vertex_count = count;
+            if (type == "face")   face_count = count;
         }
         else if (keyword == "end_header")
             break;
     }
 
-    if (vertexCount == 0)
+    if (vertex_count == 0)
         return false;
 
     // Pass 1 — read vertices to determine bounding box
-    auto dataStart = file.tellg();
+    auto data_start = file.tellg();
 
     Vertex bmin{ std::numeric_limits<float>::max(),
                  std::numeric_limits<float>::max(),
@@ -130,7 +130,7 @@ bool PLYLoader::load(const std::string& filepath, QuantizedMesh& mesh)
                  std::numeric_limits<float>::lowest(),
                  std::numeric_limits<float>::lowest() };
 
-    for (int i = 0; i < vertexCount; ++i)
+    for (int i = 0; i < vertex_count; ++i)
     {
         float x, y, z;
         file >> x >> y >> z;
@@ -142,12 +142,12 @@ bool PLYLoader::load(const std::string& filepath, QuantizedMesh& mesh)
 
     // Pass 2 — rewind to data start, add vertices and faces
     QuantizedMeshBuilder builder(bmin, bmax, AxisBits::uniform(16), /*dedup=*/false);
-    builder.reserve(vertexCount, faceCount);
+    builder.reserve(vertex_count, face_count);
 
     file.clear();
-    file.seekg(dataStart);
+    file.seekg(data_start);
 
-    for (int i = 0; i < vertexCount; ++i)
+    for (int i = 0; i < vertex_count; ++i)
     {
         float x, y, z;
         file >> x >> y >> z;
@@ -155,7 +155,7 @@ bool PLYLoader::load(const std::string& filepath, QuantizedMesh& mesh)
         std::getline(file, line);
     }
 
-    for (int i = 0; i < faceCount; ++i)
+    for (int i = 0; i < face_count; ++i)
     {
         int n;
         file >> n;
@@ -177,18 +177,18 @@ bool PLYLoader::load(const std::string& filepath, UltraQuantizedMesh& mesh)
     if (!file.is_open()) return false;
 
     std::string line;
-    int vertexCount = 0, faceCount = 0;
+    int vertex_count = 0, face_count = 0;
     while (std::getline(file, line)) {
         std::istringstream iss(line); std::string kw; iss >> kw;
-        if (kw == "element") { std::string t; int c; iss >> t >> c; if (t == "vertex") vertexCount = c; if (t == "face") faceCount = c; }
+        if (kw == "element") { std::string t; int c; iss >> t >> c; if (t == "vertex") vertex_count = c; if (t == "face") face_count = c; }
         else if (kw == "end_header") break;
     }
-    if (vertexCount == 0) return false;
+    if (vertex_count == 0) return false;
 
-    auto dataStart = file.tellg();
+    auto data_start = file.tellg();
     Vertex bmin{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
     Vertex bmax{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
-    for (int i = 0; i < vertexCount; ++i) {
+    for (int i = 0; i < vertex_count; ++i) {
         float x, y, z; file >> x >> y >> z;
         if (x < bmin.x) bmin.x = x; if (x > bmax.x) bmax.x = x;
         if (y < bmin.y) bmin.y = y; if (y > bmax.y) bmax.y = y;
@@ -197,12 +197,12 @@ bool PLYLoader::load(const std::string& filepath, UltraQuantizedMesh& mesh)
     }
 
     UltraQuantizedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/false);
-    builder.reserve(vertexCount, faceCount);
-    file.clear(); file.seekg(dataStart);
-    for (int i = 0; i < vertexCount; ++i) {
+    builder.reserve(vertex_count, face_count);
+    file.clear(); file.seekg(data_start);
+    for (int i = 0; i < vertex_count; ++i) {
         float x, y, z; file >> x >> y >> z; builder.add_vertex(x, y, z); std::getline(file, line);
     }
-    for (int i = 0; i < faceCount; ++i) {
+    for (int i = 0; i < face_count; ++i) {
         int n; file >> n; std::vector<uint32_t> idx(n);
         for (int j = 0; j < n; ++j) file >> idx[j];
         for (int j = 1; j + 1 < n; ++j) builder.add_face(idx[0], idx[j], idx[j + 1]);

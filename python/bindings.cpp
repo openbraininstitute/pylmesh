@@ -56,7 +56,7 @@ NB_MODULE(_pylmesh, m)
         .def_rw("normals", &pylmesh::Mesh::normals)
         .def_rw("texcoords", &pylmesh::Mesh::texcoords)
         .def_rw("indices", &pylmesh::Mesh::indices)
-        .def_rw("face_offsets", &pylmesh::Mesh::faceOffsets)
+        .def_rw("face_offsets", &pylmesh::Mesh::face_offsets)
         .def("clear", &pylmesh::Mesh::clear)
         .def("is_empty", &pylmesh::Mesh::is_empty)
         .def("vertex_count", &pylmesh::Mesh::vertex_count)
@@ -168,7 +168,7 @@ NB_MODULE(_pylmesh, m)
         [](const std::string& filepath)
         {
             pylmesh::Mesh mesh;
-            if (pylmesh::MeshLoaderFactory::loadMesh(filepath, mesh))
+            if (pylmesh::MeshLoaderFactory::load_mesh(filepath, mesh))
             {
                 return mesh;
             }
@@ -183,7 +183,7 @@ NB_MODULE(_pylmesh, m)
         [](const std::string& filepath)
         {
             pylmesh::QuantizedMesh mesh;
-            if (pylmesh::MeshLoaderFactory::loadMesh(filepath, mesh))
+            if (pylmesh::MeshLoaderFactory::load_mesh(filepath, mesh))
             {
                 return mesh;
             }
@@ -197,7 +197,7 @@ NB_MODULE(_pylmesh, m)
         "save_mesh",
         [](const std::string& filepath, const pylmesh::Mesh& mesh)
         {
-            if (pylmesh::MeshExporterFactory::saveMesh(filepath, mesh))
+            if (pylmesh::MeshExporterFactory::save_mesh(filepath, mesh))
             {
                 return true;
             }
@@ -210,7 +210,7 @@ NB_MODULE(_pylmesh, m)
         "save_quantized_mesh",
         [](const std::string& filepath, const pylmesh::QuantizedMesh& mesh)
         {
-            if (pylmesh::MeshExporterFactory::saveMesh(filepath, mesh))
+            if (pylmesh::MeshExporterFactory::save_mesh(filepath, mesh))
             {
                 return true;
             }
@@ -292,7 +292,7 @@ NB_MODULE(_pylmesh, m)
         [](const std::string& filepath)
         {
             pylmesh::UltraQuantizedMesh mesh;
-            if (pylmesh::MeshLoaderFactory::loadMesh(filepath, mesh))
+            if (pylmesh::MeshLoaderFactory::load_mesh(filepath, mesh))
             {
                 return mesh;
             }
@@ -305,7 +305,7 @@ NB_MODULE(_pylmesh, m)
         "save_ultra_quantized_mesh",
         [](const std::string& filepath, pylmesh::UltraQuantizedMesh& mesh)
         {
-            if (pylmesh::MeshExporterFactory::saveMesh(filepath, mesh))
+            if (pylmesh::MeshExporterFactory::save_mesh(filepath, mesh))
             {
                 return true;
             }

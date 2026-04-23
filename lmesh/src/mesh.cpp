@@ -33,7 +33,7 @@ void Mesh::clear()
     normals.clear();
     texcoords.clear();
     indices.clear();
-    faceOffsets.clear();
+    face_offsets.clear();
 }
 
 bool Mesh::is_empty() const
@@ -49,7 +49,7 @@ uint32_t Mesh::vertex_count() const noexcept
 
 uint32_t Mesh::face_count() const noexcept
 {
-    return static_cast<uint32_t>(faceOffsets.empty() ? 0 : faceOffsets.size() - 1);
+    return static_cast<uint32_t>(face_offsets.empty() ? 0 : face_offsets.size() - 1);
 }
 
 Vertex Mesh::get_vertex(uint32_t i) const
@@ -70,7 +70,7 @@ size_t Mesh::vertex_bytes() const noexcept
 
 size_t Mesh::face_bytes() const noexcept
 {
-    return indices.size() * sizeof(uint32_t) + faceOffsets.size() * sizeof(uint32_t);
+    return indices.size() * sizeof(uint32_t) + face_offsets.size() * sizeof(uint32_t);
 }
 
 size_t Mesh::total_bytes() const noexcept
@@ -81,21 +81,21 @@ size_t Mesh::total_bytes() const noexcept
 uint32_t Mesh::face_size(size_t f) const
 {
     assert(f < face_count());
-    return faceOffsets[f + 1] - faceOffsets[f];
+    return face_offsets[f + 1] - face_offsets[f];
 }
 
 const uint32_t* Mesh::face_indices(size_t f) const
 {
     assert(f < face_count());
-    return indices.data() + faceOffsets[f];
+    return indices.data() + face_offsets[f];
 }
 
 void Mesh::add_face(const uint32_t* idx, size_t count)
 {
-    if (faceOffsets.empty())
-        faceOffsets.push_back(0);
+    if (face_offsets.empty())
+        face_offsets.push_back(0);
     indices.insert(indices.end(), idx, idx + count);
-    faceOffsets.push_back(static_cast<uint32_t>(indices.size()));
+    face_offsets.push_back(static_cast<uint32_t>(indices.size()));
 }
 
 void Mesh::add_face(std::initializer_list<uint32_t> idx)
@@ -123,15 +123,15 @@ std::vector<unsigned int> Mesh::get_faces_array() const
 
 double Mesh::surface_area() const
 {
-    const size_t nFaces = face_count();
+    const size_t n_faces = face_count();
 
 #ifdef PYLMESH_USE_OPENMP
     double area = 0.0;
     #pragma omp parallel for reduction(+:area)
-    for (size_t faceIdx = 0; faceIdx < nFaces; ++faceIdx)
+    for (size_t face_idx = 0; face_idx < n_faces; ++face_idx)
     {
-        const uint32_t* idx = face_indices(faceIdx);
-        const uint32_t n = face_size(faceIdx);
+        const uint32_t* idx = face_indices(face_idx);
+        const uint32_t n = face_size(face_idx);
         if (n < 3)
             continue;
 
@@ -159,10 +159,10 @@ double Mesh::surface_area() const
     }
 #else
     double area = 0.0;
-    for (size_t faceIdx = 0; faceIdx < nFaces; ++faceIdx)
+    for (size_t face_idx = 0; face_idx < n_faces; ++face_idx)
     {
-        const uint32_t* idx = faceIndices(faceIdx);
-        const uint32_t n = faceSize(faceIdx);
+        const uint32_t* idx = face_indices(face_idx);
+        const uint32_t n = face_size(face_idx);
         if (n < 3)
             continue;
 

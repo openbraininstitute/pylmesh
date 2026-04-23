@@ -33,16 +33,16 @@ class MeshExporter
     virtual bool save(const std::string& filepath, const Mesh& mesh) = 0;
     virtual bool save(const std::string& filepath, const QuantizedMesh& mesh) = 0;
     virtual bool save(const std::string& filepath, UltraQuantizedMesh& mesh) = 0;
-    virtual bool canSave(const std::string& filepath) const = 0;
+    virtual bool can_save(const std::string& filepath) const = 0;
 };
 
 class MeshExporterFactory
 {
   public:
-    static std::unique_ptr<MeshExporter> createExporter(const std::string& filepath);
-    static bool saveMesh(const std::string& filepath, const Mesh& mesh);
-    static bool saveMesh(const std::string& filepath, const QuantizedMesh& mesh);
-    static bool saveMesh(const std::string& filepath, UltraQuantizedMesh& mesh);
+    static std::unique_ptr<MeshExporter> create_exporter(const std::string& filepath);
+    static bool save_mesh(const std::string& filepath, const Mesh& mesh);
+    static bool save_mesh(const std::string& filepath, const QuantizedMesh& mesh);
+    static bool save_mesh(const std::string& filepath, UltraQuantizedMesh& mesh);
 };
 
 } // namespace pylmesh

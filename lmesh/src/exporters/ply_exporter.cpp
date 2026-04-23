@@ -25,7 +25,7 @@
 namespace pylmesh
 {
 
-bool PLYExporter::canSave(const std::string& filepath) const
+bool PLYExporter::can_save(const std::string& filepath) const
 {
     return filepath.size() >= 4 && filepath.substr(filepath.size() - 4) == ".ply";
 }
@@ -72,26 +72,26 @@ bool PLYExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
     if (!file.is_open())
         return false;
 
-    const uint32_t nVerts = mesh.vertex_count();
-    const uint32_t nFaces = mesh.face_count();
+    const uint32_t n_verts = mesh.vertex_count();
+    const uint32_t n_faces = mesh.face_count();
 
     file << "ply\n";
     file << "format ascii 1.0\n";
-    file << "element vertex " << nVerts << "\n";
+    file << "element vertex " << n_verts << "\n";
     file << "property float x\n";
     file << "property float y\n";
     file << "property float z\n";
-    file << "element face " << nFaces << "\n";
+    file << "element face " << n_faces << "\n";
     file << "property list uchar int vertex_indices\n";
     file << "end_header\n";
 
-    for (uint32_t i = 0; i < nVerts; ++i)
+    for (uint32_t i = 0; i < n_verts; ++i)
     {
         Vertex v = mesh.get_vertex(i);
         file << v.x << " " << v.y << " " << v.z << "\n";
     }
 
-    for (uint32_t i = 0; i < nFaces; ++i)
+    for (uint32_t i = 0; i < n_faces; ++i)
     {
         auto f = mesh.get_face(i);
         file << "3 " << f[0] << " " << f[1] << " " << f[2] << "\n";

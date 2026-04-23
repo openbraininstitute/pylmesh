@@ -29,7 +29,7 @@ class OFFExporter : public MeshExporter
     bool save(const std::string& filepath, const Mesh& mesh) override;
     bool save(const std::string& filepath, const QuantizedMesh& mesh) override;
     bool save(const std::string& filepath, UltraQuantizedMesh& mesh) override;
-    bool canSave(const std::string& filepath) const override;
+    bool can_save(const std::string& filepath) const override;
 };
 
 } // namespace pylmesh

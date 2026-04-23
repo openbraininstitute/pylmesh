@@ -27,54 +27,54 @@
 namespace pylmesh
 {
 
-std::unique_ptr<MeshExporter> MeshExporterFactory::createExporter(const std::string& filepath)
+std::unique_ptr<MeshExporter> MeshExporterFactory::create_exporter(const std::string& filepath)
 {
-    if (OBJExporter().canSave(filepath))
+    if (OBJExporter().can_save(filepath))
     {
         return std::make_unique<OBJExporter>();
     }
-    if (STLExporter().canSave(filepath))
+    if (STLExporter().can_save(filepath))
     {
         return std::make_unique<STLExporter>();
     }
-    if (PLYExporter().canSave(filepath))
+    if (PLYExporter().can_save(filepath))
     {
         return std::make_unique<PLYExporter>();
     }
-    if (OFFExporter().canSave(filepath))
+    if (OFFExporter().can_save(filepath))
     {
         return std::make_unique<OFFExporter>();
     }
-    if (GLTFExporter().canSave(filepath))
+    if (GLTFExporter().can_save(filepath))
     {
         return std::make_unique<GLTFExporter>();
     }
-    if (GLBExporter().canSave(filepath))
+    if (GLBExporter().can_save(filepath))
     {
         return std::make_unique<GLBExporter>();
     }
     return nullptr;
 }
 
-bool MeshExporterFactory::saveMesh(const std::string& filepath, const Mesh& mesh)
+bool MeshExporterFactory::save_mesh(const std::string& filepath, const Mesh& mesh)
 {
-    auto exporter = createExporter(filepath);
+    auto exporter = create_exporter(filepath);
     if (!exporter)
         return false;
     return exporter->save(filepath, mesh);
 }
 
-bool MeshExporterFactory::saveMesh(const std::string& filepath, const QuantizedMesh& mesh)
+bool MeshExporterFactory::save_mesh(const std::string& filepath, const QuantizedMesh& mesh)
 {
-    auto exporter = createExporter(filepath);
+    auto exporter = create_exporter(filepath);
     if (!exporter)
         return false;
     return exporter->save(filepath, mesh);
 }
 
-bool MeshExporterFactory::saveMesh(const std::string& filepath, UltraQuantizedMesh& mesh)
+bool MeshExporterFactory::save_mesh(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
-    auto exporter = createExporter(filepath);
+    auto exporter = create_exporter(filepath);
     if (!exporter)
         return false;
     return exporter->save(filepath, mesh);

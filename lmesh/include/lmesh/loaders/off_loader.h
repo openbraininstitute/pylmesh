@@ -29,7 +29,7 @@ class OFFLoader : public MeshLoader
     bool load(const std::string& filepath, Mesh& mesh) override;
     bool load(const std::string& filepath, QuantizedMesh& mesh) override;
     bool load(const std::string& filepath, UltraQuantizedMesh& mesh) override;
-    bool canLoad(const std::string& filepath) const override;
+    bool can_load(const std::string& filepath) const override;
 };
 
 } // namespace pylmesh
