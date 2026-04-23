@@ -52,7 +52,7 @@ struct Quantizer
 {
     float    min[3]   = {};
     float    scale[3] = {1.f, 1.f, 1.f};
-    int      bits     = 16;
+    int      bits     = 21;
 
     void init(const float* bmin, const float* bmax, int b = 16);
     void quantize(float x, float y, float z,
@@ -172,7 +172,7 @@ class UltraCompressedMeshBuilder
 {
   public:
     explicit UltraCompressedMeshBuilder(Vertex min, Vertex max,
-                                        int  bits  = 16,
+                                        int  bits  = 21,
                                         bool dedup = true);
 
     void     reserve(size_t vertex_count, size_t face_count);

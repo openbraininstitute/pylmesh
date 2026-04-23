@@ -264,7 +264,7 @@ NB_MODULE(_pylmesh, m)
     nb::class_<pylmesh::UltraCompressedMeshBuilder>(m, "UltraCompressedMeshBuilder")
         .def(nb::init<pylmesh::Vertex, pylmesh::Vertex, int, bool>(),
              nb::arg("min"), nb::arg("max"),
-             nb::arg("bits") = 16, nb::arg("dedup") = true,
+             nb::arg("bits") = 21, nb::arg("dedup") = false,
              "Create a builder with bounding box and precision")
         .def("reserve", &pylmesh::UltraCompressedMeshBuilder::reserve,
              nb::arg("vertex_count"), nb::arg("face_count"),
