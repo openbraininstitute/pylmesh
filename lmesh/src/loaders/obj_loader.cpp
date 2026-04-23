@@ -153,7 +153,7 @@ bool OBJLoader::load(const std::string& filepath, Mesh& mesh)
         {
             if (p[1] == ' ') [[likely]]
             {
-                p += 2;
+                p += 2; skip_spaces(p);
                 Vertex& v = mesh.vertices[v_idx++];
                 v.x = parse_float(p); skip_spaces(p);
                 v.y = parse_float(p); skip_spaces(p);
@@ -161,7 +161,7 @@ bool OBJLoader::load(const std::string& filepath, Mesh& mesh)
             }
             else if (p[1] == 'n')
             {
-                p += 3;
+                p += 3; skip_spaces(p);
                 Normal& n = mesh.normals[n_idx++];
                 n.nx = parse_float(p); skip_spaces(p);
                 n.ny = parse_float(p); skip_spaces(p);
@@ -169,7 +169,7 @@ bool OBJLoader::load(const std::string& filepath, Mesh& mesh)
             }
             else if (p[1] == 't')
             {
-                p += 3;
+                p += 3; skip_spaces(p);
                 TexCoord& t = mesh.texcoords[t_idx++];
                 t.u = parse_float(p); skip_spaces(p);
                 t.v = parse_float(p);
@@ -283,7 +283,7 @@ bool OBJLoader::load(const std::string& filepath,
  
         if (p[0] == 'v' && p[1] == ' ')
         {
-            p += 2;
+            p += 2; skip_spaces(p);
             const float x = parse_float(p); skip_spaces(p);
             const float y = parse_float(p); skip_spaces(p);
             const float z = parse_float(p);
@@ -320,7 +320,7 @@ bool OBJLoader::load(const std::string& filepath,
  
         if (p[0] == 'v' && p[1] == ' ') [[likely]]
         {
-            p += 2;
+            p += 2; skip_spaces(p);
             const float x = parse_float(p); skip_spaces(p);
             const float y = parse_float(p); skip_spaces(p);
             const float z = parse_float(p);
@@ -396,7 +396,7 @@ bool OBJLoader::load(const std::string& filepath, UltraQuantizedMesh& out_mesh)
     for (const char* p = begin; p < end; ) {
         skip_line_prefix(p, end); if (p >= end) break;
         if (p[0] == 'v' && p[1] == ' ') {
-            p += 2;
+            p += 2; skip_spaces(p);
             float x = parse_float(p); skip_spaces(p);
             float y = parse_float(p); skip_spaces(p);
             float z = parse_float(p);
@@ -419,7 +419,7 @@ bool OBJLoader::load(const std::string& filepath, UltraQuantizedMesh& out_mesh)
     for (const char* p = begin; p < end; ) {
         skip_line_prefix(p, end); if (p >= end) break;
         if (p[0] == 'v' && p[1] == ' ') [[likely]] {
-            p += 2;
+            p += 2; skip_spaces(p);
             float x = parse_float(p); skip_spaces(p);
             float y = parse_float(p); skip_spaces(p);
             float z = parse_float(p);
