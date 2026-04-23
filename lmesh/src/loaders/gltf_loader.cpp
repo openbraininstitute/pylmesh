@@ -93,7 +93,7 @@ bool GLTFLoader::load(const std::string& filepath, Mesh& mesh)
 
                             draco::DecoderBuffer dec_buffer;
                             dec_buffer.Init(reinterpret_cast<const char*>(data),
-                                           bufferView.byteLength);
+                                            bufferView.byteLength);
 
                             draco::Decoder decoder;
                             auto statusor = decoder.DecodeMeshFromBuffer(&dec_buffer);
@@ -104,8 +104,9 @@ bool GLTFLoader::load(const std::string& filepath, Mesh& mesh)
                                     std::move(statusor).value();
 
                                 // Extract positions
-                                const draco::PointAttribute* pos_attr = draco_mesh->GetNamedAttribute(
-                                    draco::GeometryAttribute::POSITION);
+                                const draco::PointAttribute* pos_attr =
+                                    draco_mesh->GetNamedAttribute(
+                                        draco::GeometryAttribute::POSITION);
                                 if (pos_attr)
                                 {
                                     for (draco::PointIndex i(0); i < draco_mesh->num_points(); ++i)
@@ -236,7 +237,8 @@ bool GLTFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
             return false;
 
         // Helper: read a raw index from a typed buffer
-        auto read_index = [](const uint8_t* data, int componentType, size_t i) -> uint32_t {
+        auto read_index = [](const uint8_t* data, int componentType, size_t i) -> uint32_t
+        {
             if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
                 return reinterpret_cast<const uint16_t*>(data)[i];
             else if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)
@@ -257,18 +259,26 @@ bool GLTFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
         // ─────────────────────────────────────────────────────────────────────
         // Pass 1 — scan all positions to determine bounding box
         // ─────────────────────────────────────────────────────────────────────
-        Vertex bmin{ std::numeric_limits<float>::max(),
-                     std::numeric_limits<float>::max(),
-                     std::numeric_limits<float>::max() };
-        Vertex bmax{ std::numeric_limits<float>::lowest(),
-                     std::numeric_limits<float>::lowest(),
-                     std::numeric_limits<float>::lowest() };
+        Vertex bmin{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
+                    std::numeric_limits<float>::max()};
+        Vertex bmax{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(),
+                    std::numeric_limits<float>::lowest()};
         bool has_verts = false;
 
-        auto update_bounds = [&](float x, float y, float z) {
-            if (x < bmin.x) bmin.x = x; if (x > bmax.x) bmax.x = x;
-            if (y < bmin.y) bmin.y = y; if (y > bmax.y) bmax.y = y;
-            if (z < bmin.z) bmin.z = z; if (z > bmax.z) bmax.z = z;
+        auto update_bounds = [&](float x, float y, float z)
+        {
+            if (x < bmin.x)
+                bmin.x = x;
+            if (x > bmax.x)
+                bmax.x = x;
+            if (y < bmin.y)
+                bmin.y = y;
+            if (y > bmax.y)
+                bmax.y = y;
+            if (z < bmin.z)
+                bmin.z = z;
+            if (z > bmax.z)
+                bmax.z = z;
             has_verts = true;
         };
 
@@ -289,7 +299,7 @@ bool GLTFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
 
                     draco::DecoderBuffer dec_buffer;
                     dec_buffer.Init(reinterpret_cast<const char*>(&buf.data[bv.byteOffset]),
-                                   bv.byteLength);
+                                    bv.byteLength);
 
                     draco::Decoder decoder;
                     auto statusor = decoder.DecodeMeshFromBuffer(&dec_buffer);
@@ -313,13 +323,14 @@ bool GLTFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
                 }
 #endif
                 auto pos_it = primitive.attributes.find("POSITION");
-                if (pos_it == primitive.attributes.end()) continue;
+                if (pos_it == primitive.attributes.end())
+                    continue;
 
                 const auto& acc = model.accessors[pos_it->second];
                 const auto& bv = model.bufferViews[acc.bufferView];
                 const auto& buf = model.buffers[bv.buffer];
-                const float* positions = reinterpret_cast<const float*>(
-                    &buf.data[bv.byteOffset + acc.byteOffset]);
+                const float* positions =
+                    reinterpret_cast<const float*>(&buf.data[bv.byteOffset + acc.byteOffset]);
 
                 for (size_t i = 0; i < acc.count; ++i)
                     update_bounds(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
@@ -368,10 +379,9 @@ bool GLTFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
                     for (draco::FaceIndex i(0); i < dd.mesh->num_faces(); ++i)
                     {
                         const auto& face = dd.mesh->face(i);
-                        builder.add_face(
-                            prim_vertex_offset + face[0].value(),
-                            prim_vertex_offset + face[1].value(),
-                            prim_vertex_offset + face[2].value());
+                        builder.add_face(prim_vertex_offset + face[0].value(),
+                                         prim_vertex_offset + face[1].value(),
+                                         prim_vertex_offset + face[2].value());
                     }
 
                     dd.mesh.reset();
@@ -380,7 +390,8 @@ bool GLTFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
 #endif
                 // Add vertices
                 auto pos_it = primitive.attributes.find("POSITION");
-                if (pos_it == primitive.attributes.end()) continue;
+                if (pos_it == primitive.attributes.end())
+                    continue;
 
                 const auto& pos_acc = model.accessors[pos_it->second];
                 const auto& pos_bv = model.bufferViews[pos_acc.bufferView];
@@ -390,7 +401,8 @@ bool GLTFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
 
                 for (size_t i = 0; i < pos_acc.count; ++i)
                 {
-                    builder.add_vertex(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
+                    builder.add_vertex(positions[i * 3], positions[i * 3 + 1],
+                                       positions[i * 3 + 2]);
                     ++global_vertex_offset;
                 }
 
@@ -407,7 +419,8 @@ bool GLTFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
                         builder.add_face(
                             prim_vertex_offset + read_index(idx_data, idx_acc.componentType, i),
                             prim_vertex_offset + read_index(idx_data, idx_acc.componentType, i + 1),
-                            prim_vertex_offset + read_index(idx_data, idx_acc.componentType, i + 2));
+                            prim_vertex_offset +
+                                read_index(idx_data, idx_acc.componentType, i + 2));
                     }
                 }
             }
@@ -432,19 +445,32 @@ bool GLTFLoader::load(const std::string& filepath, UltraQuantizedMesh& mesh)
     if (!load(filepath, raw))
         return false;
 
-    Vertex bmin{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
-    Vertex bmax{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
-    for (const auto& v : raw.vertices) {
-        if (v.x < bmin.x) bmin.x = v.x; if (v.x > bmax.x) bmax.x = v.x;
-        if (v.y < bmin.y) bmin.y = v.y; if (v.y > bmax.y) bmax.y = v.y;
-        if (v.z < bmin.z) bmin.z = v.z; if (v.z > bmax.z) bmax.z = v.z;
+    Vertex bmin{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
+                std::numeric_limits<float>::max()};
+    Vertex bmax{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(),
+                std::numeric_limits<float>::lowest()};
+    for (const auto& v : raw.vertices)
+    {
+        if (v.x < bmin.x)
+            bmin.x = v.x;
+        if (v.x > bmax.x)
+            bmax.x = v.x;
+        if (v.y < bmin.y)
+            bmin.y = v.y;
+        if (v.y > bmax.y)
+            bmax.y = v.y;
+        if (v.z < bmin.z)
+            bmin.z = v.z;
+        if (v.z > bmax.z)
+            bmax.z = v.z;
     }
 
     UltraQuantizedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/false);
     builder.reserve(raw.vertices.size(), raw.face_count());
     for (const auto& v : raw.vertices)
         builder.add_vertex(v.x, v.y, v.z);
-    for (size_t fi = 0; fi < raw.face_count(); ++fi) {
+    for (size_t fi = 0; fi < raw.face_count(); ++fi)
+    {
         const uint32_t* idx = raw.face_indices(fi);
         uint32_t n = raw.face_size(fi);
         for (uint32_t j = 1; j + 1 < n; ++j)

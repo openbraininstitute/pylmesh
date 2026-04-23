@@ -41,7 +41,6 @@ bool Mesh::is_empty() const
     return vertices.empty();
 }
 
-
 uint32_t Mesh::vertex_count() const noexcept
 {
     return static_cast<uint32_t>(vertices.size());
@@ -127,7 +126,7 @@ double Mesh::surface_area() const
 
 #ifdef PYLMESH_USE_OPENMP
     double area = 0.0;
-    #pragma omp parallel for reduction(+:area)
+#pragma omp parallel for reduction(+ : area)
     for (size_t face_idx = 0; face_idx < n_faces; ++face_idx)
     {
         const uint32_t* idx = face_indices(face_idx);

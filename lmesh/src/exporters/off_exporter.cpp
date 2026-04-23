@@ -89,14 +89,17 @@ bool OFFExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
 bool OFFExporter::save(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
     std::ofstream file(filepath);
-    if (!file.is_open()) return false;
+    if (!file.is_open())
+        return false;
 
     file << "OFF\n" << mesh.vertex_count() << " " << mesh.face_count() << " 0\n";
-    for (uint32_t i = 0; i < mesh.vertex_count(); ++i) {
+    for (uint32_t i = 0; i < mesh.vertex_count(); ++i)
+    {
         Vertex v = mesh.get_vertex(i);
         file << v.x << " " << v.y << " " << v.z << "\n";
     }
-    for (uint32_t i = 0; i < mesh.face_count(); ++i) {
+    for (uint32_t i = 0; i < mesh.face_count(); ++i)
+    {
         auto f = mesh.get_face(i);
         file << "3 " << f[0] << " " << f[1] << " " << f[2] << "\n";
     }

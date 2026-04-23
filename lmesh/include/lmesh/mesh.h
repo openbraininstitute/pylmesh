@@ -50,14 +50,14 @@ class Mesh : public BaseMesh
     bool is_empty() const;
 
     // BaseMesh interface
-    Vertex   get_vertex(uint32_t i) const override;
-    Face     get_face(uint32_t i)   const override;
-    uint32_t vertex_count()         const noexcept override;
-    uint32_t face_count()           const noexcept override;
-    double   surface_area()         const override;
-    size_t   vertex_bytes()         const noexcept override;
-    size_t   face_bytes()           const noexcept override;
-    size_t   total_bytes()          const noexcept override;
+    Vertex get_vertex(uint32_t i) const override;
+    Face get_face(uint32_t i) const override;
+    uint32_t vertex_count() const noexcept override;
+    uint32_t face_count() const noexcept override;
+    double surface_area() const override;
+    size_t vertex_bytes() const noexcept override;
+    size_t face_bytes() const noexcept override;
+    size_t total_bytes() const noexcept override;
 
     uint32_t face_size(size_t f) const;
     const uint32_t* face_indices(size_t f) const;

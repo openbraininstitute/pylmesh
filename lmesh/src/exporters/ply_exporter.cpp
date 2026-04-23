@@ -103,7 +103,8 @@ bool PLYExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
 bool PLYExporter::save(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
     std::ofstream file(filepath);
-    if (!file.is_open()) return false;
+    if (!file.is_open())
+        return false;
 
     file << "ply\nformat ascii 1.0\n";
     file << "element vertex " << mesh.vertex_count() << "\n";
@@ -111,11 +112,13 @@ bool PLYExporter::save(const std::string& filepath, UltraQuantizedMesh& mesh)
     file << "element face " << mesh.face_count() << "\n";
     file << "property list uchar int vertex_indices\nend_header\n";
 
-    for (uint32_t i = 0; i < mesh.vertex_count(); ++i) {
+    for (uint32_t i = 0; i < mesh.vertex_count(); ++i)
+    {
         Vertex v = mesh.get_vertex(i);
         file << v.x << " " << v.y << " " << v.z << "\n";
     }
-    for (uint32_t i = 0; i < mesh.face_count(); ++i) {
+    for (uint32_t i = 0; i < mesh.face_count(); ++i)
+    {
         auto f = mesh.get_face(i);
         file << "3 " << f[0] << " " << f[1] << " " << f[2] << "\n";
     }

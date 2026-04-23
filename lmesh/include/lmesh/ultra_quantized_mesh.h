@@ -1,40 +1,23 @@
-#pragma once
+/*****************************************************************************************
+ * Copyright (c) 2025 - 2026, Open Brain Institute
+ *
+ * Author(s):
+ *   Marwan Abdellah <marwan.abdellah@openbraininstitute.org>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *****************************************************************************************/
 
-// ============================================================================
-//  UltraQuantizedMesh + UltraQuantizedMeshBuilder
-//
-//  Design priorities: minimum sealed memory, O(chunk) access acceptable.
-//
-//  Compression pipeline (both vertices AND faces):
-//    1. Quantize x/y/z → uint32_t grid coords
-//    2. Morton-sort vertices for spatial locality
-//    3. Sort faces by min(a,b,c) remapped index → local index deltas
-//    4. Per chunk: column-orient streams (all-dx, all-dy, all-dz)
-//    5. Delta-encode → zigzag → varint
-//    6. zstd level 19 per chunk
-//
-//  Memory (sealed, excluding LRU cache):
-//    Vertices : ~1.8–2.5 B/vertex
-//    Faces    : ~3.5–5 B/face
-//    Target   : ~70–90 MB for 11.7M vert / 23.5M face mesh
-//               vs 250 MB previous, 299 MB QuantizedMesh, 524 MB naive
-//
-//  LRU cache (decompressed working set, NOT part of sealed mesh):
-//    CACHE_SLOTS × CHUNK_SIZE × 3 × 4 B ≈ 25 MB for defaults
-//    Trades memory for decompression frequency.
-//    Tune CACHE_SLOTS down to reduce memory if access is rare.
-//
-//  Chunk size tradeoff:
-//    Larger → better zstd ratio, higher cache cost, slower random seek
-//    CHUNK_SIZE = 32768 is the sweet spot for memory-first use.
-//
-//  Lifecycle:
-//    UltraQuantizedMeshBuilder b(bmin, bmax, /*bits=*/16, /*dedup=*/true);
-//    b.reserve(N, F);
-//    for (...) b.add_vertex(x, y, z);
-//    for (...) b.add_face(a, b, c);
-//    UltraQuantizedMesh mesh = std::move(b).build();
-// ============================================================================
+#pragma once
 
 #include <array>
 #include <cstdint>
@@ -46,8 +29,6 @@
 
 namespace pylmesh
 {
-
-// ── Quantizer ───────────────────────────────────────────────────────────────
 
 struct Quantizer
 {
@@ -62,20 +43,18 @@ struct Quantizer
                     float& x,   float& y,   float& z)   const noexcept;
 };
 
-// ── Compressed chunk ────────────────────────────────────────────────────────
-
 struct CompressedChunk
 {
     std::vector<uint8_t> data;  // zstd(varint(delta(column-interleaved coords)))
     uint32_t             count = 0;
 };
 
-// ── Flat LRU cache ──────────────────────────────────────────────────────────
-//
-//  Holds CACHE_SLOTS decompressed chunks. Each slot is a flat uint32_t[]
-//  in column order: [qx0..qxN, qy0..qyN, qz0..qzN].
-//  Memory: CACHE_SLOTS × CHUNK_SIZE × 3 × 4 B ≈ 25 MB at defaults.
-
+/**
+ * Flat LRU cache
+ * Holds CACHE_SLOTS decompressed chunks. Each slot is a flat uint32_t[]
+ * in column order: [qx0..qxN, qy0..qyN, qz0..qzN].
+ * Memory: CACHE_SLOTS × CHUNK_SIZE × 3 × 4 B ≈ 25 MB at defaults.
+ */
 class FlatLRUCache
 {
   public:
@@ -105,10 +84,41 @@ class FlatLRUCache
     std::vector<uint32_t> data_; // slots_ × chunk_size_ × 3 — one flat allocation
 };
 
-// ============================================================================
-//  UltraQuantizedMesh — sealed, read-only
-// ============================================================================
-
+/**
+ *  UltraQuantizedMesh + UltraQuantizedMeshBuilder
+ *
+ *  Design priorities: minimum sealed memory, O(chunk) access acceptable.
+ *
+ *  Compression pipeline (both vertices AND faces):
+ *    1. Quantize x/y/z → uint32_t grid coords
+ *    2. Morton-sort vertices for spatial locality
+ *    3. Sort faces by min(a,b,c) remapped index → local index deltas
+ *    4. Per chunk: column-orient streams (all-dx, all-dy, all-dz)
+ *    5. Delta-encode → zigzag → varint
+ *    6. zstd level 19 per chunk
+ *
+ *  Memory (sealed, excluding LRU cache):
+ *    Vertices : ~1.8–2.5 B/vertex
+ *    Faces    : ~3.5–5 B/face
+ *    Target   : ~70–90 MB for 11.7M vert / 23.5M face mesh
+ *               vs 250 MB previous, 299 MB QuantizedMesh, 524 MB naive
+ *
+ *  LRU cache (decompressed working set, NOT part of sealed mesh):
+ *    CACHE_SLOTS × CHUNK_SIZE × 3 × 4 B ≈ 25 MB for defaults
+ *    Trades memory for decompression frequency.
+ *    Tune CACHE_SLOTS down to reduce memory if access is rare.
+ *
+ *  Chunk size tradeoff:
+ *    Larger → better zstd ratio, higher cache cost, slower random seek
+ *    CHUNK_SIZE = 32768 is the sweet spot for memory-first use.
+ *
+ *  Lifecycle:
+ *    UltraQuantizedMeshBuilder b(bmin, bmax);
+ *    b.reserve(N, F);
+ *    for (...) b.add_vertex(x, y, z);
+ *    for (...) b.add_face(a, b, c);
+ *    UltraQuantizedMesh mesh = std::move(b).build();
+ */
 class UltraQuantizedMesh : public BaseMesh
 {
   public:
@@ -160,10 +170,42 @@ class UltraQuantizedMesh : public BaseMesh
     mutable FlatLRUCache fcache_;
 };
 
-// ============================================================================
-//  UltraQuantizedMeshBuilder
-// ============================================================================
 
+/**
+ *  UltraQuantizedMesh + UltraQuantizedMeshBuilder
+ *
+ *  Design priorities: minimum sealed memory, O(chunk) access acceptable.
+ *
+ *  Compression pipeline (both vertices AND faces):
+ *    1. Quantize x/y/z → uint32_t grid coords
+ *    2. Morton-sort vertices for spatial locality
+ *    3. Sort faces by min(a,b,c) remapped index → local index deltas
+ *    4. Per chunk: column-orient streams (all-dx, all-dy, all-dz)
+ *    5. Delta-encode → zigzag → varint
+ *    6. zstd level 19 per chunk
+ *
+ *  Memory (sealed, excluding LRU cache):
+ *    Vertices : ~1.8–2.5 B/vertex
+ *    Faces    : ~3.5–5 B/face
+ *    Target   : ~70–90 MB for 11.7M vert / 23.5M face mesh
+ *               vs 250 MB previous, 299 MB QuantizedMesh, 524 MB naive
+ *
+ *  LRU cache (decompressed working set, NOT part of sealed mesh):
+ *    CACHE_SLOTS × CHUNK_SIZE × 3 × 4 B ≈ 25 MB for defaults
+ *    Trades memory for decompression frequency.
+ *    Tune CACHE_SLOTS down to reduce memory if access is rare.
+ *
+ *  Chunk size tradeoff:
+ *    Larger → better zstd ratio, higher cache cost, slower random seek
+ *    CHUNK_SIZE = 32768 is the sweet spot for memory-first use.
+ *
+ *  Lifecycle:
+ *    UltraQuantizedMeshBuilder b(bmin, bmax);
+ *    b.reserve(N, F);
+ *    for (...) b.add_vertex(x, y, z);
+ *    for (...) b.add_face(a, b, c);
+ *    UltraQuantizedMesh mesh = std::move(b).build();
+ */
 class UltraQuantizedMeshBuilder
 {
   public:

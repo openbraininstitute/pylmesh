@@ -97,15 +97,18 @@ bool OBJExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
 bool OBJExporter::save(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
     std::ofstream file(filepath);
-    if (!file.is_open()) return false;
+    if (!file.is_open())
+        return false;
     file << "# OBJ file exported by pylmesh\n";
-    for (uint32_t i = 0; i < mesh.vertex_count(); ++i) {
+    for (uint32_t i = 0; i < mesh.vertex_count(); ++i)
+    {
         Vertex v = mesh.get_vertex(i);
         file << "v " << v.x << " " << v.y << " " << v.z << "\n";
     }
-    for (uint32_t i = 0; i < mesh.face_count(); ++i) {
+    for (uint32_t i = 0; i < mesh.face_count(); ++i)
+    {
         auto f = mesh.get_face(i);
-        file << "f " << (f[0]+1) << " " << (f[1]+1) << " " << (f[2]+1) << "\n";
+        file << "f " << (f[0] + 1) << " " << (f[1] + 1) << " " << (f[2] + 1) << "\n";
     }
     return true;
 }

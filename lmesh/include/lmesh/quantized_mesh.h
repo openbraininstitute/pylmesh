@@ -1,35 +1,23 @@
-#pragma once
+/*****************************************************************************************
+ * Copyright (c) 2025 - 2026, Open Brain Institute
+ *
+ * Author(s):
+ *   Marwan Abdellah <marwan.abdellah@openbraininstitute.org>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *****************************************************************************************/
 
-// ============================================================================
-//  QuantizedMesh  +  QuantizedMeshBuilder
-//
-//  Each vertex is packed as:  qx | (qy << bx) | (qz << (bx+by))
-//
-//  Vertex bit width = bx + by + bz  (each axis independently sized)
-//
-//  Example configurations:
-//
-//   x/y/z bits   vertex bits   use-case
-//   16/16/16         48        general mesh          (default)
-//   16/16/ 8         40        flat terrain, maps    (−17% vs default)
-//   10/10/10         30        coarse preview mesh   (−38% vs default)
-//    8/ 8/ 4         20        highly compressed     (−58% vs default)
-//
-//  Face storage: ⌈log₂(vertex_count)⌉ bits per index (unchanged).
-//
-//  Constraint: bx,by,bz ∈ [1,21] and bx+by+bz ≤ 63.
-//  The ≤63 limit keeps bit 63 clear in all valid packed values,
-//  preserving UINT64_MAX as the FlatHashMap sentinel.
-//
-//  Lifecycle
-//  ---------
-//    AxisBits bits{16, 16, 8};                  // or AxisBits::uniform(16)
-//    QuantizedMeshBuilder b(bmin, bmax, bits);
-//    b.reserve(verts.size(), faces.size());
-//    for (auto& v : verts) b.add_vertex(v.x, v.y, v.z);
-//    for (auto& f : faces) b.add_face(f[0], f[1], f[2]);
-//    QuantizedMesh mesh = std::move(b).build();
-// ============================================================================
+#pragma once
 
 #include <array>
 #include <cstdint>
@@ -43,9 +31,11 @@
 namespace pylmesh
 {
 
-// ============================================================================
-//  AxisBits — per-axis quantization resolution
-// ============================================================================
+/**
+ * Per-axis quantization resolution, in bits. Each axis is quantized to an
+ * independent number of bits, allowing for flexible tradeoffs between precision
+ * and storage size.
+ */
 struct AxisBits
 {
     int x = 16, y = 16, z = 16;
@@ -62,9 +52,36 @@ struct AxisBits
     }
 };
 
-// ============================================================================
-//  QuantizedMesh — sealed, read-only storage
-// ============================================================================
+/**
+ *  QuantizedMesh  +  QuantizedMeshBuilder
+ *
+ *  Each vertex is packed as:  qx | (qy << bx) | (qz << (bx+by))
+ *
+ *  Vertex bit width = bx + by + bz  (each axis independently sized)
+ *
+ *  Example configurations:
+ *
+ *   x/y/z bits   vertex bits   use-case
+ *   16/16/16         48        general mesh          (default)
+ *   16/16/ 8         40        flat terrain, maps    (−17% vs default)
+ *   10/10/10         30        coarse preview mesh   (−38% vs default)
+ *    8/ 8/ 4         20        highly compressed     (−58% vs default)
+ *
+ *  Face storage: ⌈log₂(vertex_count)⌉ bits per index (unchanged).
+ *
+ *  Constraint: bx,by,bz ∈ [1,21] and bx+by+bz ≤ 63.
+ *  The ≤63 limit keeps bit 63 clear in all valid packed values,
+ *  preserving UINT64_MAX as the FlatHashMap sentinel.
+ *
+ *  Lifecycle
+ *  ---------
+ *    AxisBits bits{16, 16, 8};                  * or AxisBits::uniform(16)
+ *    QuantizedMeshBuilder b(bmin, bmax, bits);
+ *    b.reserve(verts.size(), faces.size());
+ *    for (auto& v : verts) b.add_vertex(v.x, v.y, v.z);
+ *    for (auto& f : faces) b.add_face(f[0], f[1], f[2]);
+ *    QuantizedMesh mesh = std::move(b).build();
+ */
 class QuantizedMesh : public BaseMesh
 {
   public:
@@ -73,14 +90,14 @@ class QuantizedMesh : public BaseMesh
     QuantizedMesh() = default;
 
     // BaseMesh interface
-    Vertex   get_vertex(uint32_t i) const override;
-    Face     get_face(uint32_t i)   const override;
-    uint32_t vertex_count()         const noexcept override;
-    uint32_t face_count()           const noexcept override;
-    double   surface_area()         const override;
-    size_t   vertex_bytes()         const noexcept override;
-    size_t   face_bytes()           const noexcept override;
-    size_t   total_bytes()          const noexcept override;
+    Vertex get_vertex(uint32_t i) const override;
+    Face get_face(uint32_t i) const override;
+    uint32_t vertex_count() const noexcept override;
+    uint32_t face_count() const noexcept override;
+    double surface_area() const override;
+    size_t vertex_bytes() const noexcept override;
+    size_t face_bytes() const noexcept override;
+    size_t total_bytes() const noexcept override;
 
     // QuantizedMesh-specific
     AxisBits bits_per_axis() const noexcept
@@ -111,9 +128,36 @@ class QuantizedMesh : public BaseMesh
     BitPackedArray indices_; // width = ⌈log₂(vertex_count)⌉,  count = face_count*3
 };
 
-// ============================================================================
-//  QuantizedMeshBuilder
-// ============================================================================
+/**
+ *  QuantizedMesh  +  QuantizedMeshBuilder
+ *
+ *  Each vertex is packed as:  qx | (qy << bx) | (qz << (bx+by))
+ *
+ *  Vertex bit width = bx + by + bz  (each axis independently sized)
+ *
+ *  Example configurations:
+ *
+ *   x/y/z bits   vertex bits   use-case
+ *   16/16/16         48        general mesh          (default)
+ *   16/16/ 8         40        flat terrain, maps    (−17% vs default)
+ *   10/10/10         30        coarse preview mesh   (−38% vs default)
+ *    8/ 8/ 4         20        highly compressed     (−58% vs default)
+ *
+ *  Face storage: ⌈log₂(vertex_count)⌉ bits per index (unchanged).
+ *
+ *  Constraint: bx,by,bz ∈ [1,21] and bx+by+bz ≤ 63.
+ *  The ≤63 limit keeps bit 63 clear in all valid packed values,
+ *  preserving UINT64_MAX as the FlatHashMap sentinel.
+ *
+ *  Lifecycle
+ *  ---------
+ *    AxisBits bits{16, 16, 8};                  * or AxisBits::uniform(16)
+ *    QuantizedMeshBuilder b(bmin, bmax, bits);
+ *    b.reserve(verts.size(), faces.size());
+ *    for (auto& v : verts) b.add_vertex(v.x, v.y, v.z);
+ *    for (auto& f : faces) b.add_face(f[0], f[1], f[2]);
+ *    QuantizedMesh mesh = std::move(b).build();
+ */
 class QuantizedMeshBuilder
 {
   public:

@@ -155,18 +155,23 @@ bool GLTFExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
 
     // Dequantize all vertices and compute bounds
     std::vector<float> positions(n_verts * 3);
-    float pMin[3] = { std::numeric_limits<float>::max(),  std::numeric_limits<float>::max(),  std::numeric_limits<float>::max() };
-    float pMax[3] = {-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max() };
+    float pMin[3] = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
+                     std::numeric_limits<float>::max()};
+    float pMax[3] = {-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(),
+                     -std::numeric_limits<float>::max()};
 
     for (uint32_t i = 0; i < n_verts; ++i)
     {
         Vertex v = mesh.get_vertex(i);
-        positions[i * 3]     = v.x;
+        positions[i * 3] = v.x;
         positions[i * 3 + 1] = v.y;
         positions[i * 3 + 2] = v.z;
-        pMin[0] = std::min(pMin[0], v.x); pMax[0] = std::max(pMax[0], v.x);
-        pMin[1] = std::min(pMin[1], v.y); pMax[1] = std::max(pMax[1], v.y);
-        pMin[2] = std::min(pMin[2], v.z); pMax[2] = std::max(pMax[2], v.z);
+        pMin[0] = std::min(pMin[0], v.x);
+        pMax[0] = std::max(pMax[0], v.x);
+        pMin[1] = std::min(pMin[1], v.y);
+        pMax[1] = std::max(pMax[1], v.y);
+        pMin[2] = std::min(pMin[2], v.z);
+        pMax[2] = std::max(pMax[2], v.z);
     }
 
     // Decode all face indices
@@ -174,7 +179,7 @@ bool GLTFExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
     for (uint32_t i = 0; i < n_faces; ++i)
     {
         auto f = mesh.get_face(i);
-        indices[i * 3]     = f[0];
+        indices[i * 3] = f[0];
         indices[i * 3 + 1] = f[1];
         indices[i * 3 + 2] = f[2];
     }
@@ -192,24 +197,32 @@ bool GLTFExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
     std::memcpy(&buffer.data[pos_size], indices.data(), idx_size);
 
     tinygltf::BufferView pos_view;
-    pos_view.buffer = 0; pos_view.byteOffset = 0; pos_view.byteLength = pos_size;
+    pos_view.buffer = 0;
+    pos_view.byteOffset = 0;
+    pos_view.byteLength = pos_size;
     pos_view.target = TINYGLTF_TARGET_ARRAY_BUFFER;
 
     tinygltf::BufferView idx_view;
-    idx_view.buffer = 0; idx_view.byteOffset = pos_size; idx_view.byteLength = idx_size;
+    idx_view.buffer = 0;
+    idx_view.byteOffset = pos_size;
+    idx_view.byteLength = idx_size;
     idx_view.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
 
     tinygltf::Accessor pos_acc;
-    pos_acc.bufferView = 0; pos_acc.byteOffset = 0;
+    pos_acc.bufferView = 0;
+    pos_acc.byteOffset = 0;
     pos_acc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-    pos_acc.count = n_verts; pos_acc.type = TINYGLTF_TYPE_VEC3;
+    pos_acc.count = n_verts;
+    pos_acc.type = TINYGLTF_TYPE_VEC3;
     pos_acc.minValues = {pMin[0], pMin[1], pMin[2]};
     pos_acc.maxValues = {pMax[0], pMax[1], pMax[2]};
 
     tinygltf::Accessor idx_acc;
-    idx_acc.bufferView = 1; idx_acc.byteOffset = 0;
+    idx_acc.bufferView = 1;
+    idx_acc.byteOffset = 0;
     idx_acc.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
-    idx_acc.count = indices.size(); idx_acc.type = TINYGLTF_TYPE_SCALAR;
+    idx_acc.count = indices.size();
+    idx_acc.type = TINYGLTF_TYPE_SCALAR;
 
     primitive.attributes["POSITION"] = 0;
     primitive.indices = 1;
@@ -223,7 +236,8 @@ bool GLTFExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
     model.accessors.push_back(pos_acc);
     model.accessors.push_back(idx_acc);
 
-    tinygltf::Node node; node.mesh = 0;
+    tinygltf::Node node;
+    node.mesh = 0;
     model.nodes.push_back(node);
     scene.nodes.push_back(0);
     model.scenes.push_back(scene);
@@ -253,7 +267,7 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh)
     // Add position attribute
     draco::GeometryAttribute pos_attr;
     pos_attr.Init(draco::GeometryAttribute::POSITION, nullptr, 3, draco::DT_FLOAT32, false,
-                 sizeof(float) * 3, 0);
+                  sizeof(float) * 3, 0);
     int pos_att_id = draco_mesh.AddAttribute(pos_attr, true, mesh.vertices.size());
 
     float pMin[3] = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
@@ -464,8 +478,10 @@ bool GLBExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
     const uint32_t n_faces = mesh.face_count();
 
     // Dequantize vertices and compute bounds
-    float pMin[3] = { std::numeric_limits<float>::max(),  std::numeric_limits<float>::max(),  std::numeric_limits<float>::max() };
-    float pMax[3] = {-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max() };
+    float pMin[3] = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
+                     std::numeric_limits<float>::max()};
+    float pMax[3] = {-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(),
+                     -std::numeric_limits<float>::max()};
 
     draco::Mesh draco_mesh;
     draco_mesh.set_num_points(n_verts);
@@ -473,7 +489,7 @@ bool GLBExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
 
     draco::GeometryAttribute pos_attr;
     pos_attr.Init(draco::GeometryAttribute::POSITION, nullptr, 3, draco::DT_FLOAT32, false,
-                 sizeof(float) * 3, 0);
+                  sizeof(float) * 3, 0);
     int pos_att_id = draco_mesh.AddAttribute(pos_attr, true, n_verts);
 
     for (uint32_t i = 0; i < n_verts; ++i)
@@ -481,16 +497,21 @@ bool GLBExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
         Vertex v = mesh.get_vertex(i);
         float pos[3] = {v.x, v.y, v.z};
         draco_mesh.attribute(pos_att_id)->SetAttributeValue(draco::AttributeValueIndex(i), pos);
-        pMin[0] = std::min(pMin[0], v.x); pMax[0] = std::max(pMax[0], v.x);
-        pMin[1] = std::min(pMin[1], v.y); pMax[1] = std::max(pMax[1], v.y);
-        pMin[2] = std::min(pMin[2], v.z); pMax[2] = std::max(pMax[2], v.z);
+        pMin[0] = std::min(pMin[0], v.x);
+        pMax[0] = std::max(pMax[0], v.x);
+        pMin[1] = std::min(pMin[1], v.y);
+        pMax[1] = std::max(pMax[1], v.y);
+        pMin[2] = std::min(pMin[2], v.z);
+        pMax[2] = std::max(pMax[2], v.z);
     }
 
     for (uint32_t i = 0; i < n_faces; ++i)
     {
         auto f = mesh.get_face(i);
         draco::Mesh::Face face;
-        face[0] = f[0]; face[1] = f[1]; face[2] = f[2];
+        face[0] = f[0];
+        face[1] = f[1];
+        face[2] = f[2];
         draco_mesh.SetFace(draco::FaceIndex(i), face);
     }
 
@@ -511,13 +532,16 @@ bool GLBExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
     buffer.data.assign(enc_buffer.data(), enc_buffer.data() + enc_buffer.size());
 
     tinygltf::BufferView bufferView;
-    bufferView.buffer = 0; bufferView.byteOffset = 0;
+    bufferView.buffer = 0;
+    bufferView.byteOffset = 0;
     bufferView.byteLength = buffer.data.size();
 
     tinygltf::Accessor pos_acc;
-    pos_acc.bufferView = 0; pos_acc.byteOffset = 0;
+    pos_acc.bufferView = 0;
+    pos_acc.byteOffset = 0;
     pos_acc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-    pos_acc.count = n_verts; pos_acc.type = TINYGLTF_TYPE_VEC3;
+    pos_acc.count = n_verts;
+    pos_acc.type = TINYGLTF_TYPE_VEC3;
     pos_acc.minValues = {pMin[0], pMin[1], pMin[2]};
     pos_acc.maxValues = {pMax[0], pMax[1], pMax[2]};
 
@@ -548,7 +572,8 @@ bool GLBExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
     gltf_mesh.primitives.push_back(primitive);
     model.meshes.push_back(gltf_mesh);
 
-    tinygltf::Node node; node.mesh = 0;
+    tinygltf::Node node;
+    node.mesh = 0;
     model.nodes.push_back(node);
     scene.nodes.push_back(0);
     model.scenes.push_back(scene);
@@ -562,23 +587,32 @@ bool GLBExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
     const uint32_t n_faces = mesh.face_count();
 
     std::vector<float> positions(n_verts * 3);
-    float pMin[3] = { std::numeric_limits<float>::max(),  std::numeric_limits<float>::max(),  std::numeric_limits<float>::max() };
-    float pMax[3] = {-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max() };
+    float pMin[3] = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
+                     std::numeric_limits<float>::max()};
+    float pMax[3] = {-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(),
+                     -std::numeric_limits<float>::max()};
 
     for (uint32_t i = 0; i < n_verts; ++i)
     {
         Vertex v = mesh.get_vertex(i);
-        positions[i * 3] = v.x; positions[i * 3 + 1] = v.y; positions[i * 3 + 2] = v.z;
-        pMin[0] = std::min(pMin[0], v.x); pMax[0] = std::max(pMax[0], v.x);
-        pMin[1] = std::min(pMin[1], v.y); pMax[1] = std::max(pMax[1], v.y);
-        pMin[2] = std::min(pMin[2], v.z); pMax[2] = std::max(pMax[2], v.z);
+        positions[i * 3] = v.x;
+        positions[i * 3 + 1] = v.y;
+        positions[i * 3 + 2] = v.z;
+        pMin[0] = std::min(pMin[0], v.x);
+        pMax[0] = std::max(pMax[0], v.x);
+        pMin[1] = std::min(pMin[1], v.y);
+        pMax[1] = std::max(pMax[1], v.y);
+        pMin[2] = std::min(pMin[2], v.z);
+        pMax[2] = std::max(pMax[2], v.z);
     }
 
     std::vector<uint32_t> indices(n_faces * 3);
     for (uint32_t i = 0; i < n_faces; ++i)
     {
         auto f = mesh.get_face(i);
-        indices[i * 3] = f[0]; indices[i * 3 + 1] = f[1]; indices[i * 3 + 2] = f[2];
+        indices[i * 3] = f[0];
+        indices[i * 3 + 1] = f[1];
+        indices[i * 3 + 2] = f[2];
     }
 
     tinygltf::Model model;
@@ -594,24 +628,32 @@ bool GLBExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
     std::memcpy(&buffer.data[pos_size], indices.data(), idx_size);
 
     tinygltf::BufferView pos_view;
-    pos_view.buffer = 0; pos_view.byteOffset = 0; pos_view.byteLength = pos_size;
+    pos_view.buffer = 0;
+    pos_view.byteOffset = 0;
+    pos_view.byteLength = pos_size;
     pos_view.target = TINYGLTF_TARGET_ARRAY_BUFFER;
 
     tinygltf::BufferView idx_view;
-    idx_view.buffer = 0; idx_view.byteOffset = pos_size; idx_view.byteLength = idx_size;
+    idx_view.buffer = 0;
+    idx_view.byteOffset = pos_size;
+    idx_view.byteLength = idx_size;
     idx_view.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
 
     tinygltf::Accessor pos_acc;
-    pos_acc.bufferView = 0; pos_acc.byteOffset = 0;
+    pos_acc.bufferView = 0;
+    pos_acc.byteOffset = 0;
     pos_acc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-    pos_acc.count = n_verts; pos_acc.type = TINYGLTF_TYPE_VEC3;
+    pos_acc.count = n_verts;
+    pos_acc.type = TINYGLTF_TYPE_VEC3;
     pos_acc.minValues = {pMin[0], pMin[1], pMin[2]};
     pos_acc.maxValues = {pMax[0], pMax[1], pMax[2]};
 
     tinygltf::Accessor idx_acc;
-    idx_acc.bufferView = 1; idx_acc.byteOffset = 0;
+    idx_acc.bufferView = 1;
+    idx_acc.byteOffset = 0;
     idx_acc.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
-    idx_acc.count = indices.size(); idx_acc.type = TINYGLTF_TYPE_SCALAR;
+    idx_acc.count = indices.size();
+    idx_acc.type = TINYGLTF_TYPE_SCALAR;
 
     primitive.attributes["POSITION"] = 0;
     primitive.indices = 1;
@@ -625,7 +667,8 @@ bool GLBExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
     model.accessors.push_back(pos_acc);
     model.accessors.push_back(idx_acc);
 
-    tinygltf::Node node; node.mesh = 0;
+    tinygltf::Node node;
+    node.mesh = 0;
     model.nodes.push_back(node);
     scene.nodes.push_back(0);
     model.scenes.push_back(scene);

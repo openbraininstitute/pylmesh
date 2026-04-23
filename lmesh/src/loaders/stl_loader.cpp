@@ -20,8 +20,8 @@
 #include "lmesh/loaders/stl_loader.h"
 #include "lmesh/quantized_mesh.h"
 #include <fstream>
-#include <sstream>
 #include <limits>
+#include <sstream>
 
 namespace pylmesh
 {
@@ -70,12 +70,10 @@ bool STLLoader::load(const std::string& filepath, QuantizedMesh& mesh)
         return false;
 
     // Pass 1 — scan vertices to determine bounding box
-    Vertex bmin{ std::numeric_limits<float>::max(),
-                 std::numeric_limits<float>::max(),
-                 std::numeric_limits<float>::max() };
-    Vertex bmax{ std::numeric_limits<float>::lowest(),
-                 std::numeric_limits<float>::lowest(),
-                 std::numeric_limits<float>::lowest() };
+    Vertex bmin{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
+                std::numeric_limits<float>::max()};
+    Vertex bmax{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(),
+                std::numeric_limits<float>::lowest()};
     size_t v_count = 0;
 
     std::string line;
@@ -88,9 +86,18 @@ bool STLLoader::load(const std::string& filepath, QuantizedMesh& mesh)
         {
             float x, y, z;
             iss >> x >> y >> z;
-            if (x < bmin.x) bmin.x = x; if (x > bmax.x) bmax.x = x;
-            if (y < bmin.y) bmin.y = y; if (y > bmax.y) bmax.y = y;
-            if (z < bmin.z) bmin.z = z; if (z > bmax.z) bmax.z = z;
+            if (x < bmin.x)
+                bmin.x = x;
+            if (x > bmax.x)
+                bmax.x = x;
+            if (y < bmin.y)
+                bmin.y = y;
+            if (y > bmax.y)
+                bmax.y = y;
+            if (z < bmin.z)
+                bmin.z = z;
+            if (z > bmax.z)
+                bmax.z = z;
             ++v_count;
         }
     }
@@ -130,34 +137,59 @@ bool STLLoader::load(const std::string& filepath, QuantizedMesh& mesh)
 bool STLLoader::load(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
     std::ifstream file(filepath);
-    if (!file.is_open()) return false;
+    if (!file.is_open())
+        return false;
 
-    Vertex bmin{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
-    Vertex bmax{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
+    Vertex bmin{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
+                std::numeric_limits<float>::max()};
+    Vertex bmax{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(),
+                std::numeric_limits<float>::lowest()};
     size_t v_count = 0;
     std::string line;
 
-    while (std::getline(file, line)) {
-        std::istringstream iss(line); std::string kw; iss >> kw;
-        if (kw == "vertex") {
-            float x, y, z; iss >> x >> y >> z;
-            if (x < bmin.x) bmin.x = x; if (x > bmax.x) bmax.x = x;
-            if (y < bmin.y) bmin.y = y; if (y > bmax.y) bmax.y = y;
-            if (z < bmin.z) bmin.z = z; if (z > bmax.z) bmax.z = z;
+    while (std::getline(file, line))
+    {
+        std::istringstream iss(line);
+        std::string kw;
+        iss >> kw;
+        if (kw == "vertex")
+        {
+            float x, y, z;
+            iss >> x >> y >> z;
+            if (x < bmin.x)
+                bmin.x = x;
+            if (x > bmax.x)
+                bmax.x = x;
+            if (y < bmin.y)
+                bmin.y = y;
+            if (y > bmax.y)
+                bmax.y = y;
+            if (z < bmin.z)
+                bmin.z = z;
+            if (z > bmax.z)
+                bmax.z = z;
             ++v_count;
         }
     }
-    if (v_count == 0) return false;
+    if (v_count == 0)
+        return false;
 
     UltraQuantizedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/true);
     builder.reserve(v_count, v_count / 3);
 
-    file.clear(); file.seekg(0);
-    std::vector<uint32_t> slots; slots.reserve(v_count);
-    while (std::getline(file, line)) {
-        std::istringstream iss(line); std::string kw; iss >> kw;
-        if (kw == "vertex") {
-            float x, y, z; iss >> x >> y >> z;
+    file.clear();
+    file.seekg(0);
+    std::vector<uint32_t> slots;
+    slots.reserve(v_count);
+    while (std::getline(file, line))
+    {
+        std::istringstream iss(line);
+        std::string kw;
+        iss >> kw;
+        if (kw == "vertex")
+        {
+            float x, y, z;
+            iss >> x >> y >> z;
             slots.push_back(builder.add_vertex(x, y, z));
         }
     }

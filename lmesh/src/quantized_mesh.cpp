@@ -1,3 +1,22 @@
+/*****************************************************************************************
+ * Copyright (c) 2025 - 2026, Open Brain Institute
+ *
+ * Author(s):
+ *   Marwan Abdellah <marwan.abdellah@openbraininstitute.org>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *****************************************************************************************/
+
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -6,10 +25,6 @@
 
 namespace pylmesh
 {
-
-// ============================================================================
-//  QuantizedMesh
-// ============================================================================
 
 QuantizedMesh::QuantizedMesh(Vertex min, Vertex max, AxisBits bits)
 {
@@ -28,21 +43,21 @@ QuantizedMesh::QuantizedMesh(Vertex min, Vertex max, AxisBits bits)
     const float* mn = &min.x;
     const float* mx = &max.x;
 
-    bits_[0]   = bits.x;
-    bits_[1]   = bits.y;
-    bits_[2]   = bits.z;
-    masks_[0]  = (1ull << bits.x) - 1u;
-    masks_[1]  = (1ull << bits.y) - 1u;
-    masks_[2]  = (1ull << bits.z) - 1u;
+    bits_[0] = bits.x;
+    bits_[1] = bits.y;
+    bits_[2] = bits.z;
+    masks_[0] = (1ull << bits.x) - 1u;
+    masks_[1] = (1ull << bits.y) - 1u;
+    masks_[2] = (1ull << bits.z) - 1u;
     shifts_[0] = 0u;
     shifts_[1] = static_cast<unsigned>(bits.x);
     shifts_[2] = static_cast<unsigned>(bits.x + bits.y);
 
     for (int i = 0; i < 3; ++i)
     {
-        bbox_min_[i]      = mn[i];
+        bbox_min_[i] = mn[i];
         const float range = mx[i] - mn[i];
-        bbox_scale_[i]    = range > 0.f ? range / float(masks_[i]) : 1.f;
+        bbox_scale_[i] = range > 0.f ? range / float(masks_[i]) : 1.f;
     }
 }
 
@@ -62,11 +77,9 @@ uint64_t QuantizedMesh::encode(float x, float y, float z) const noexcept
 
 Vertex QuantizedMesh::decode(uint64_t packed) const noexcept
 {
-    return {
-        bbox_min_[0] + float( packed                & masks_[0]) * bbox_scale_[0],
-        bbox_min_[1] + float((packed >> shifts_[1]) & masks_[1]) * bbox_scale_[1],
-        bbox_min_[2] + float((packed >> shifts_[2]) & masks_[2]) * bbox_scale_[2]
-    };
+    return {bbox_min_[0] + float(packed & masks_[0]) * bbox_scale_[0],
+            bbox_min_[1] + float((packed >> shifts_[1]) & masks_[1]) * bbox_scale_[1],
+            bbox_min_[2] + float((packed >> shifts_[2]) & masks_[2]) * bbox_scale_[2]};
 }
 
 Vertex QuantizedMesh::get_vertex(uint32_t i) const
@@ -81,11 +94,9 @@ QuantizedMesh::Face QuantizedMesh::get_face(uint32_t i) const
     if (i >= face_count())
         throw std::out_of_range("QuantizedMesh::get_face: index out of range");
     const size_t base = static_cast<size_t>(i) * 3;
-    return {
-        static_cast<uint32_t>(indices_.get(base    )),
-        static_cast<uint32_t>(indices_.get(base + 1)),
-        static_cast<uint32_t>(indices_.get(base + 2))
-    };
+    return {static_cast<uint32_t>(indices_.get(base)),
+            static_cast<uint32_t>(indices_.get(base + 1)),
+            static_cast<uint32_t>(indices_.get(base + 2))};
 }
 
 uint32_t QuantizedMesh::vertex_count() const noexcept
@@ -119,37 +130,36 @@ double QuantizedMesh::surface_area() const
     for (uint32_t i = 0, n = face_count(); i < n; ++i)
     {
         const size_t base = static_cast<size_t>(i) * 3;
-        const Vertex v0   = decode(vdata_.get(indices_.get(base    )));
-        const Vertex v1   = decode(vdata_.get(indices_.get(base + 1)));
-        const Vertex v2   = decode(vdata_.get(indices_.get(base + 2)));
+        const Vertex v0 = decode(vdata_.get(indices_.get(base)));
+        const Vertex v1 = decode(vdata_.get(indices_.get(base + 1)));
+        const Vertex v2 = decode(vdata_.get(indices_.get(base + 2)));
 
         const double ax = v1.x - v0.x, ay = v1.y - v0.y, az = v1.z - v0.z;
         const double bx = v2.x - v0.x, by = v2.y - v0.y, bz = v2.z - v0.z;
-        const double cx = ay*bz - az*by, cy = az*bx - ax*bz, cz = ax*by - ay*bx;
+        const double cx = ay * bz - az * by, cy = az * bx - ax * bz, cz = ax * by - ay * bx;
 
-        area += std::sqrt(cx*cx + cy*cy + cz*cz);
+        area += std::sqrt(cx * cx + cy * cy + cz * cz);
     }
     return area * 0.5;
 }
 
-
-// ============================================================================
-//  QuantizedMeshBuilder
-// ============================================================================
-
 uint32_t QuantizedMeshBuilder::index_width(uint32_t n) noexcept
 {
-    if (n <= 2) return 1;
+    if (n <= 2)
+        return 1;
     uint32_t bits = 0, v = n - 1;
-    while (v) { v >>= 1; ++bits; }
+    while (v)
+    {
+        v >>= 1;
+        ++bits;
+    }
     return bits;
 }
 
-QuantizedMeshBuilder::QuantizedMeshBuilder(Vertex min, Vertex max,
-                                            AxisBits bits, bool dedup)
-    : mesh_(min, max, bits)
-    , dedup_(dedup)
-{}
+QuantizedMeshBuilder::QuantizedMeshBuilder(Vertex min, Vertex max, AxisBits bits, bool dedup)
+    : mesh_(min, max, bits), dedup_(dedup)
+{
+}
 
 void QuantizedMeshBuilder::reserve(size_t vertex_count, size_t face_count)
 {
@@ -165,8 +175,8 @@ uint32_t QuantizedMeshBuilder::add_vertex(float x, float y, float z)
 
     if (dedup_)
     {
-        auto [value, inserted] = dedup_map_.emplace(
-            packed, static_cast<uint32_t>(tmp_vdata_.size()));
+        auto [value, inserted] =
+            dedup_map_.emplace(packed, static_cast<uint32_t>(tmp_vdata_.size()));
         if (!inserted)
             return value;
     }
