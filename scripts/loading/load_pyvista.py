@@ -44,7 +44,7 @@ def main():
 
     # ---- Area ----
     t2 = perf_counter()
-    area = mesh.area   # <-- correct usage
+    area = mesh.area
     t3 = perf_counter()
 
     mem_after = get_memory_mb()
