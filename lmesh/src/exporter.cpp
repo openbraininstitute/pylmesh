@@ -64,4 +64,12 @@ bool MeshExporterFactory::saveMesh(const std::string& filepath, const Mesh& mesh
     return exporter->save(filepath, mesh);
 }
 
+bool MeshExporterFactory::saveMesh(const std::string& filepath, const QuantizedMesh& mesh)
+{
+    auto exporter = createExporter(filepath);
+    if (!exporter)
+        return false;
+    return exporter->save(filepath, mesh);
+}
+
 } // namespace pylmesh

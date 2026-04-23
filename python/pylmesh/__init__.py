@@ -21,7 +21,10 @@
 
 """pylmesh - A lightweight library for importing and exporting surface mesh files"""
 
-from ._pylmesh import Mesh, Vertex, Normal, TexCoord, load_mesh, save_mesh
+from ._pylmesh import (Mesh, Vertex, Normal, TexCoord,
+                       QuantizedMesh, QuantizedMeshBuilder, AxisBits,
+                       load_mesh, save_mesh,
+                       load_quantized_mesh, save_quantized_mesh)
 from .trimesh_utils import to_trimesh
 from .batch_conversion_glb import batch_convert_to_glb
 from pathlib import Path
@@ -39,8 +42,13 @@ except Exception:
 __all__ = ["Mesh", 
            "Vertex", 
            "Normal", 
-           "TexCoord", 
+           "TexCoord",
+           "QuantizedMesh",
+           "QuantizedMeshBuilder",
+           "AxisBits",
            "load_mesh", 
-           "save_mesh", 
+           "save_mesh",
+           "load_quantized_mesh",
+           "save_quantized_mesh",
            "to_trimesh", 
            "batch_convert_to_glb"]

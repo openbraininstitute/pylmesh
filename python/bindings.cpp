@@ -20,9 +20,11 @@
 #include "lmesh/exporter.h"
 #include "lmesh/loader.h"
 #include "lmesh/mesh.h"
+#include "lmesh/quantized_mesh.h"
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
+#include <nanobind/stl/array.h>
 
 namespace nb = nanobind;
 
@@ -75,6 +77,85 @@ NB_MODULE(_pylmesh, m)
              },
              nb::arg("face_index"), "Get vertex indices for a face");
 
+    nb::class_<pylmesh::AxisBits>(m, "AxisBits")
+        .def(nb::init<int, int, int>(),
+             nb::arg("x"), nb::arg("y"), nb::arg("z"))
+        .def_static("uniform", &pylmesh::AxisBits::uniform, nb::arg("bits"))
+        .def_ro("x", &pylmesh::AxisBits::x)
+        .def_ro("y", &pylmesh::AxisBits::y)
+        .def_ro("z", &pylmesh::AxisBits::z);
+
+    nb::class_<pylmesh::QuantizedMesh>(m, "QuantizedMesh")
+        .def("get_vertex", &pylmesh::QuantizedMesh::get_vertex,
+             nb::arg("i"), "Decode vertex i back to float space")
+        .def("get_face", &pylmesh::QuantizedMesh::get_face,
+             nb::arg("i"), "Decode face i")
+        .def("vertex_count", &pylmesh::QuantizedMesh::vertex_count)
+        .def("face_count", &pylmesh::QuantizedMesh::face_count)
+        .def("bits_per_axis", &pylmesh::QuantizedMesh::bits_per_axis)
+        .def("surface_area", &pylmesh::QuantizedMesh::surface_area,
+             "Compute total surface area")
+        .def("vertex_bytes", &pylmesh::QuantizedMesh::vertex_bytes,
+             "Bytes used for vertex storage")
+        .def("face_bytes", &pylmesh::QuantizedMesh::face_bytes,
+             "Bytes used for face storage")
+        .def("total_bytes", &pylmesh::QuantizedMesh::total_bytes,
+             "Total bytes used for vertex + face storage")
+        .def("get_vertices_array",
+             [](const pylmesh::QuantizedMesh& self) -> std::vector<float>
+             {
+                 std::vector<float> result;
+                 result.reserve(self.vertex_count() * 3);
+                 for (uint32_t i = 0; i < self.vertex_count(); ++i)
+                 {
+                     pylmesh::Vertex v = self.get_vertex(i);
+                     result.push_back(v.x);
+                     result.push_back(v.y);
+                     result.push_back(v.z);
+                 }
+                 return result;
+             },
+             "Get all vertices as flat array [x1,y1,z1,x2,y2,z2,...]")
+        .def("get_faces_array",
+             [](const pylmesh::QuantizedMesh& self) -> std::vector<uint32_t>
+             {
+                 std::vector<uint32_t> result;
+                 result.reserve(self.face_count() * 3);
+                 for (uint32_t i = 0; i < self.face_count(); ++i)
+                 {
+                     auto f = self.get_face(i);
+                     result.push_back(f[0]);
+                     result.push_back(f[1]);
+                     result.push_back(f[2]);
+                 }
+                 return result;
+             },
+             "Get all faces as flat array [i1,i2,i3,...]");
+
+    nb::class_<pylmesh::QuantizedMeshBuilder>(m, "QuantizedMeshBuilder")
+        .def("__init__",
+             [](pylmesh::QuantizedMeshBuilder* self,
+                pylmesh::Vertex min, pylmesh::Vertex max,
+                int bits_per_axis, bool dedup)
+             { new (self) pylmesh::QuantizedMeshBuilder(min, max, pylmesh::AxisBits::uniform(bits_per_axis), dedup); },
+             nb::arg("min"), nb::arg("max"),
+             nb::arg("bits_per_axis") = 16, nb::arg("dedup") = true,
+             "Create a builder with bounding box and precision")
+        .def("reserve", &pylmesh::QuantizedMeshBuilder::reserve,
+             nb::arg("vertex_count"), nb::arg("face_count"),
+             "Pre-allocate storage")
+        .def("add_vertex", &pylmesh::QuantizedMeshBuilder::add_vertex,
+             nb::arg("x"), nb::arg("y"), nb::arg("z"),
+             "Quantize and store a vertex, returns slot index")
+        .def("add_face", &pylmesh::QuantizedMeshBuilder::add_face,
+             nb::arg("a"), nb::arg("b"), nb::arg("c"),
+             "Store a triangle face from slot indices")
+        .def("vertex_count", &pylmesh::QuantizedMeshBuilder::vertex_count)
+        .def("build",
+             [](pylmesh::QuantizedMeshBuilder& self) -> pylmesh::QuantizedMesh
+             { return std::move(self).build(); },
+             "Consume the builder and return a sealed QuantizedMesh");
+
     m.def(
         "load_mesh",
         [](const std::string& filepath)
@@ -91,6 +172,21 @@ NB_MODULE(_pylmesh, m)
         "Load a mesh from file (supports .obj, .stl, .ply, .off, .gltf, .glb)");
 
     m.def(
+        "load_quantized_mesh",
+        [](const std::string& filepath)
+        {
+            pylmesh::QuantizedMesh mesh;
+            if (pylmesh::MeshLoaderFactory::loadMesh(filepath, mesh))
+            {
+                return mesh;
+            }
+            throw std::runtime_error("Failed to load quantized mesh: " + filepath +
+                                     ". Check if file exists and format is supported.");
+        },
+        nb::arg("filepath"),
+        "Load a mesh into a QuantizedMesh (supports .obj, .stl, .ply, .off, .gltf, .glb)");
+
+    m.def(
         "save_mesh",
         [](const std::string& filepath, const pylmesh::Mesh& mesh)
         {
@@ -101,5 +197,18 @@ NB_MODULE(_pylmesh, m)
             throw std::runtime_error("Failed to save mesh: " + filepath);
         },
         nb::arg("filepath"), nb::arg("mesh"),
-        "Save a mesh to file (supports .obj, .stl, .ply, .off)");
+        "Save a mesh to file (supports .obj, .stl, .ply, .off, .gltf, .glb)");
+
+    m.def(
+        "save_quantized_mesh",
+        [](const std::string& filepath, const pylmesh::QuantizedMesh& mesh)
+        {
+            if (pylmesh::MeshExporterFactory::saveMesh(filepath, mesh))
+            {
+                return true;
+            }
+            throw std::runtime_error("Failed to save quantized mesh: " + filepath);
+        },
+        nb::arg("filepath"), nb::arg("mesh"),
+        "Save a QuantizedMesh to file (supports .obj, .stl, .ply, .off, .gltf, .glb)");
 }

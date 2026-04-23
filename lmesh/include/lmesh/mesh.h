@@ -24,24 +24,12 @@
 #include <string>
 #include <vector>
 
+#include "normal.h"
+#include "tex_coord.h"
+#include "vertex.h"
+
 namespace pylmesh
 {
-
-struct Vertex
-{
-    float x, y, z;
-};
-
-struct Normal
-{
-    float nx, ny, nz;
-};
-
-struct TexCoord
-{
-    float u, v;
-};
-
 class Mesh
 {
   public:

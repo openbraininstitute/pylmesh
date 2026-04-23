@@ -27,6 +27,7 @@ class GLTFExporter : public MeshExporter
 {
   public:
     bool save(const std::string& filepath, const Mesh& mesh) override;
+    bool save(const std::string& filepath, const QuantizedMesh& mesh) override;
     bool canSave(const std::string& filepath) const override;
 };
 
@@ -34,6 +35,7 @@ class GLBExporter : public MeshExporter
 {
   public:
     bool save(const std::string& filepath, const Mesh& mesh) override;
+    bool save(const std::string& filepath, const QuantizedMesh& mesh) override;
     bool canSave(const std::string& filepath) const override;
 };
 

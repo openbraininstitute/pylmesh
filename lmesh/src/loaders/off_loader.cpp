@@ -18,8 +18,10 @@
  *****************************************************************************************/
 
 #include "lmesh/loaders/off_loader.h"
+#include "lmesh/quantized_mesh.h"
 #include <fstream>
 #include <sstream>
+#include <limits>
 
 namespace pylmesh
 {
@@ -65,5 +67,72 @@ bool OFFLoader::load(const std::string& filepath, Mesh& mesh)
 
     return !mesh.isEmpty();
 }
+
+bool OFFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
+{
+    std::ifstream file(filepath);
+    if (!file.is_open())
+        return false;
+
+    std::string header;
+    file >> header;
+    if (header != "OFF")
+        return false;
+
+    int nVertices, nFaces, nEdges;
+    file >> nVertices >> nFaces >> nEdges;
+
+    if (nVertices == 0)
+        return false;
+
+    // Pass 1 — read vertices to determine bounding box
+    auto dataStart = file.tellg();
+
+    Vertex bmin{ std::numeric_limits<float>::max(),
+                 std::numeric_limits<float>::max(),
+                 std::numeric_limits<float>::max() };
+    Vertex bmax{ std::numeric_limits<float>::lowest(),
+                 std::numeric_limits<float>::lowest(),
+                 std::numeric_limits<float>::lowest() };
+
+    for (int i = 0; i < nVertices; ++i)
+    {
+        float x, y, z;
+        file >> x >> y >> z;
+        if (x < bmin.x) bmin.x = x; if (x > bmax.x) bmax.x = x;
+        if (y < bmin.y) bmin.y = y; if (y > bmax.y) bmax.y = y;
+        if (z < bmin.z) bmin.z = z; if (z > bmax.z) bmax.z = z;
+    }
+
+    // Pass 2 — rewind to data start, add vertices and faces
+    QuantizedMeshBuilder builder(bmin, bmax, AxisBits::uniform(16), /*dedup=*/false);
+    builder.reserve(nVertices, nFaces);
+
+    file.clear();
+    file.seekg(dataStart);
+
+    for (int i = 0; i < nVertices; ++i)
+    {
+        float x, y, z;
+        file >> x >> y >> z;
+        builder.add_vertex(x, y, z);
+    }
+
+    for (int i = 0; i < nFaces; ++i)
+    {
+        int n;
+        file >> n;
+        std::vector<uint32_t> idx(n);
+        for (int j = 0; j < n; ++j)
+            file >> idx[j];
+
+        for (int j = 1; j + 1 < n; ++j)
+            builder.add_face(idx[0], idx[j], idx[j + 1]);
+    }
+
+    mesh = std::move(builder).build();
+    return mesh.vertex_count() > 0;
+}
+
 
 } // namespace pylmesh

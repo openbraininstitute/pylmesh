@@ -60,4 +60,12 @@ bool MeshLoaderFactory::loadMesh(const std::string& filepath, Mesh& mesh)
     return loader->load(filepath, mesh);
 }
 
+bool MeshLoaderFactory::loadMesh(const std::string& filepath, QuantizedMesh& mesh)
+{
+    auto loader = createLoader(filepath);
+    if (!loader)
+        return false;
+    return loader->load(filepath, mesh);
+}
+
 } // namespace pylmesh

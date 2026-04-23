@@ -25,8 +25,10 @@
 #include <cstring>
 #include <cstdlib>
 #include <charconv>
+#include <limits>
 
 #include "lmesh/loaders/obj_loader.h"
+#include "lmesh/quantized_mesh.h"
 #include "lmesh/mapped_file.h"
 #include "fast_float.h"
 
@@ -213,5 +215,153 @@ bool OBJLoader::load(const std::string& filepath, Mesh& mesh)
 
     return !mesh.isEmpty();
 }
+
+bool OBJLoader::load(const std::string& filepath,
+                     QuantizedMesh&     out_mesh)
+{
+        AxisBits bits = AxisBits::uniform(16);
+
+    MappedFile file;
+    if (!file.open(filepath))
+        return false;
+ 
+    const char* const begin = file.data;
+    const char* const end   = begin + file.size;
+ 
+    // -----------------------------------------------------------------------
+    //  Helpers
+    // -----------------------------------------------------------------------
+    auto skipLine = [&](const char*& p)
+    {
+        const void* nl = std::memchr(p, '\n', static_cast<size_t>(end - p));
+        p = nl ? static_cast<const char*>(nl) + 1 : end;
+    };
+ 
+    auto skipSpaces = [](const char*& p)
+    {
+        while (*p == ' ' || *p == '\t') ++p;
+    };
+ 
+    auto parseFloat = [&](const char*& p) -> float
+    {
+        float val = 0.f;
+        auto  res = fast_float::from_chars(p, end, val);
+        p = res.ptr;
+        return val;
+    };
+ 
+    auto parseIndex = [](const char*& p) -> int
+    {
+        const bool neg = (*p == '-');
+        if (neg) ++p;
+        int val = 0;
+        while (*p >= '0' && *p <= '9')
+            val = val * 10 + (*p++ - '0');
+        return neg ? -val : val;
+    };
+ 
+    auto skipLinePrefix = [](const char*& p, const char* end_)
+    {
+        while (p < end_ && (*p == ' ' || *p == '\t' || *p == '\r')) ++p;
+    };
+ 
+    // -----------------------------------------------------------------------
+    //  Pass 1 — bounding box + vertex count
+    // -----------------------------------------------------------------------
+    Vertex bmin{ std::numeric_limits<float>::max(),
+                 std::numeric_limits<float>::max(),
+                 std::numeric_limits<float>::max() };
+    Vertex bmax{ std::numeric_limits<float>::lowest(),
+                 std::numeric_limits<float>::lowest(),
+                 std::numeric_limits<float>::lowest() };
+    size_t vCount = 0;
+ 
+    for (const char* p = begin; p < end; )
+    {
+        skipLinePrefix(p, end);
+        if (p >= end) break;
+ 
+        if (p[0] == 'v' && p[1] == ' ')
+        {
+            p += 2;
+            const float x = parseFloat(p); skipSpaces(p);
+            const float y = parseFloat(p); skipSpaces(p);
+            const float z = parseFloat(p);
+ 
+            if (x < bmin.x) bmin.x = x;
+            if (y < bmin.y) bmin.y = y;
+            if (z < bmin.z) bmin.z = z;
+            if (x > bmax.x) bmax.x = x;
+            if (y > bmax.y) bmax.y = y;
+            if (z > bmax.z) bmax.z = z;
+            ++vCount;
+        }
+ 
+        skipLine(p);
+    }
+ 
+    if (vCount == 0)
+        return false;
+ 
+    // -----------------------------------------------------------------------
+    //  Pass 2 — populate builder
+    // -----------------------------------------------------------------------
+    QuantizedMeshBuilder builder(bmin, bmax, bits, /*dedup=*/false);
+    builder.reserve(vCount, vCount * 2);
+ 
+    size_t vIdx = 0;
+    std::vector<uint32_t> faceSlots;
+    faceSlots.reserve(4);
+ 
+    for (const char* p = begin; p < end; )
+    {
+        skipLinePrefix(p, end);
+        if (p >= end) break;
+ 
+        if (p[0] == 'v' && p[1] == ' ') [[likely]]
+        {
+            p += 2;
+            const float x = parseFloat(p); skipSpaces(p);
+            const float y = parseFloat(p); skipSpaces(p);
+            const float z = parseFloat(p);
+            builder.add_vertex(x, y, z);
+            ++vIdx;
+        }
+        else if (p[0] == 'f' && (p[1] == ' ' || p[1] == '\t'))
+        {
+            p += 2;
+            faceSlots.clear();
+ 
+            while (p < end && *p != '\n' && *p != '\r')
+            {
+                skipSpaces(p);
+                if (p >= end || *p == '\n' || *p == '\r') break;
+ 
+                int vi = parseIndex(p);
+ 
+                if (*p == '/')
+                {
+                    ++p;
+                    if (*p != '/') parseIndex(p);
+                    if (*p == '/') { ++p; parseIndex(p); }
+                }
+ 
+                if (vi < 0)
+                    vi = static_cast<int>(vIdx) + vi + 1;
+ 
+                faceSlots.push_back(static_cast<uint32_t>(vi - 1));
+            }
+ 
+            for (size_t i = 1; i + 1 < faceSlots.size(); ++i)
+                builder.add_face(faceSlots[0], faceSlots[i], faceSlots[i + 1]);
+        }
+ 
+        skipLine(p);
+    }
+ 
+    out_mesh = std::move(builder).build();
+    return out_mesh.vertex_count() > 0;
+}
+
 
 } // namespace pylmesh
