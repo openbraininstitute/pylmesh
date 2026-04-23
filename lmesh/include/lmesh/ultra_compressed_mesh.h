@@ -3,17 +3,16 @@
 // ============================================================================
 //  UltraCompressedMesh + UltraCompressedMeshBuilder
 //
-//  Vertices are quantized, Morton-sorted, delta-encoded, and varint-compressed
-//  into fixed-size chunks. An LRU cache decompresses chunks on demand.
+//  Pipeline: quantize → Morton-sort → delta-encode → varint → zstd per chunk
 //
-//  Face indices are stored in a BitPackedArray (same as QuantizedMesh).
-//
-//  Memory (sealed mesh, after build()):
-//    Vertices : ~1–3 B/vertex (delta-varint compressed)
+//  Sealed-mesh memory:
+//    Vertices : ~0.5–2 B/vertex (delta-varint + zstd compressed chunks)
 //    Faces    : ⌈log₂(N)⌉ × 3 bits/face (bit-packed)
+//    Cache    : fixed 16 × CHUNK_SIZE × 12 B ≈ 1.5 MB (flat array, no heap)
 //
 //  Lifecycle:
-//    UltraCompressedMeshBuilder b(bmin, bmax);
+//    UltraCompressedMeshBuilder b(bmin, bmax, 16, false);
+//    b.reserve(N, F);
 //    for (...) b.add_vertex(x, y, z);
 //    for (...) b.add_face(a, b, c);
 //    UltraCompressedMesh mesh = std::move(b).build();
@@ -21,8 +20,6 @@
 
 #include <array>
 #include <cstdint>
-#include <list>
-#include <unordered_map>
 #include <vector>
 
 #include "lmesh/bit_packed_array.h"
@@ -32,49 +29,63 @@
 namespace pylmesh
 {
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// ── Quantizer ───────────────────────────────────────────────────────────────
 
 struct Quantizer
 {
     float min[3] = {};
     float scale[3] = {1.f, 1.f, 1.f};
+    int   bits = 16;
 
-    void init(const float* bmin, const float* bmax, int bits = 16);
+    void init(const float* bmin, const float* bmax, int b = 16);
     void quantize(float x, float y, float z,
                   uint32_t& qx, uint32_t& qy, uint32_t& qz) const;
     void dequantize(uint32_t qx, uint32_t qy, uint32_t qz,
                     float& x, float& y, float& z) const;
 };
 
+// ── Compressed chunk ────────────────────────────────────────────────────────
+
 struct CompressedChunk
 {
-    std::vector<uint8_t> data;
+    std::vector<uint8_t> data;  // zstd-compressed (or raw varint if no zstd)
     uint32_t count = 0;
 };
 
-struct DecompressedChunk
-{
-    std::vector<uint32_t> vertices; // qx,qy,qz, qx,qy,qz, ...
-};
+// ── Flat LRU cache (no heap allocation per access) ──────────────────────────
 
-class LRUCache
+class FlatLRUCache
 {
   public:
-    explicit LRUCache(size_t capacity = 16);
+    static constexpr uint32_t CAPACITY = 16;
 
-    bool get(uint32_t key, DecompressedChunk*& value);
-    void put(uint32_t key, DecompressedChunk&& value);
+    FlatLRUCache() { for (auto& s : slots_) s.chunk_id = INVALID; }
+
+    // Returns pointer to cached decompressed data, or nullptr on miss.
+    uint32_t* get(uint32_t chunk_id, uint32_t chunk_vertex_count) noexcept;
+
+    // Insert decompressed data. Evicts LRU slot.
+    uint32_t* put(uint32_t chunk_id, uint32_t chunk_vertex_count,
+                  const uint32_t* data);
 
   private:
-    size_t capacity_;
-    std::list<uint32_t> order_;
-    std::unordered_map<uint32_t,
-        std::pair<std::list<uint32_t>::iterator, DecompressedChunk>> map_;
+    static constexpr uint32_t INVALID = ~uint32_t(0);
+
+    struct Slot
+    {
+        uint32_t chunk_id = INVALID;
+        uint32_t age = 0;
+        std::vector<uint32_t> data;  // qx,qy,qz per vertex
+    };
+
+    Slot slots_[CAPACITY];
+    uint32_t tick_ = 0;
 };
 
 // ============================================================================
 //  UltraCompressedMesh — sealed, read-only
 // ============================================================================
+
 class UltraCompressedMesh
 {
   public:
@@ -98,19 +109,20 @@ class UltraCompressedMesh
   private:
     friend class UltraCompressedMeshBuilder;
 
-    DecompressedChunk decompress_chunk(uint32_t chunk_id);
+    void decompress_chunk(uint32_t chunk_id, uint32_t* out) const;
 
     Quantizer Q_;
     std::vector<CompressedChunk> vertex_chunks_;
     uint32_t vertex_count_ = 0;
 
     BitPackedArray indices_;
-    LRUCache cache_{16};
+    mutable FlatLRUCache cache_;
 };
 
 // ============================================================================
 //  UltraCompressedMeshBuilder
 // ============================================================================
+
 class UltraCompressedMeshBuilder
 {
   public:
@@ -129,10 +141,8 @@ class UltraCompressedMeshBuilder
     [[nodiscard]] UltraCompressedMesh build() &&;
 
   private:
-    Vertex bmin_, bmax_;
-    int bits_;
+    Quantizer Q_;  // reused across all add_vertex calls
 
-    // Temporary storage during construction
     std::vector<uint32_t> tmp_qx_, tmp_qy_, tmp_qz_;
     std::vector<uint32_t> tmp_indices_;
 

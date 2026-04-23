@@ -27,9 +27,11 @@ def main():
     area = mesh.surface_area()
     area_end = time()
     mem_after = process.memory_info().rss / 1024**2
-    print(f"Memory {mem_before:.2f} -> {mem_after:.2f} MB: Required: {mem_after - mem_before:.2f} MB")
-    print(f"Time: Loading: {loading_end - loading_start:.4f} seconds, Area: {area_end - area_start:.4f} seconds")
     print(type(mesh))
+    print("Vertices:", mesh.vertex_count())
+    print(f"Area: {area * 1e-6:.4f} units²")
+    print(f"Memory {mem_before:.2f} -> {mem_after:.2f} MB: Required: {mem_after - mem_before:.2f} MB")
+    print(f"Time: Loading: {loading_end - loading_start:.4f} seconds, Area: {area_end - area_start:.4f} seconds\n\n")
 
 if __name__ == "__main__":
     main()

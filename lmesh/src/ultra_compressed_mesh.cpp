@@ -2,13 +2,17 @@
 
 #include <algorithm>
 #include <cmath>
-#include <numeric>
+#include <cstring>
 #include <stdexcept>
+
+#ifdef PYLMESH_USE_ZSTD
+#include <zstd.h>
+#endif
 
 namespace pylmesh
 {
 
-// ── Varint / zigzag helpers ─────────────────────────────────────────────────
+// ── Varint / zigzag ─────────────────────────────────────────────────────────
 
 static uint32_t zigzag_enc(int32_t v) noexcept { return (uint32_t(v) << 1) ^ uint32_t(v >> 31); }
 static int32_t  zigzag_dec(uint32_t v) noexcept { return int32_t((v >> 1) ^ -(v & 1)); }
@@ -45,9 +49,10 @@ static uint64_t morton3D(uint32_t x, uint32_t y, uint32_t z) noexcept
 
 // ── Quantizer ───────────────────────────────────────────────────────────────
 
-void Quantizer::init(const float* bmin, const float* bmax, int bits)
+void Quantizer::init(const float* bmin, const float* bmax, int b)
 {
-    const float maxval = float((1u << bits) - 1u);
+    bits = b;
+    const float maxval = float((1u << b) - 1u);
     for (int i = 0; i < 3; ++i)
     {
         min[i] = bmin[i];
@@ -72,74 +77,82 @@ void Quantizer::dequantize(uint32_t qx, uint32_t qy, uint32_t qz,
     z = min[2] + float(qz) * scale[2];
 }
 
-// ── LRUCache ────────────────────────────────────────────────────────────────
+// ── FlatLRUCache ────────────────────────────────────────────────────────────
 
-LRUCache::LRUCache(size_t capacity) : capacity_(capacity) {}
-
-bool LRUCache::get(uint32_t key, DecompressedChunk*& value)
+uint32_t* FlatLRUCache::get(uint32_t chunk_id, uint32_t) noexcept
 {
-    auto it = map_.find(key);
-    if (it == map_.end()) return false;
-    order_.splice(order_.begin(), order_, it->second.first);
-    value = &it->second.second;
-    return true;
+    for (auto& s : slots_)
+    {
+        if (s.chunk_id == chunk_id)
+        {
+            s.age = ++tick_;
+            return s.data.data();
+        }
+    }
+    return nullptr;
 }
 
-void LRUCache::put(uint32_t key, DecompressedChunk&& value)
+uint32_t* FlatLRUCache::put(uint32_t chunk_id, uint32_t chunk_vertex_count,
+                            const uint32_t* data)
 {
-    if (map_.size() >= capacity_)
-    {
-        uint32_t old = order_.back();
-        order_.pop_back();
-        map_.erase(old);
-    }
-    order_.push_front(key);
-    map_[key] = {order_.begin(), std::move(value)};
+    // Find LRU slot (lowest age)
+    Slot* victim = &slots_[0];
+    for (uint32_t i = 1; i < CAPACITY; ++i)
+        if (slots_[i].age < victim->age)
+            victim = &slots_[i];
+
+    victim->chunk_id = chunk_id;
+    victim->age = ++tick_;
+    victim->data.assign(data, data + chunk_vertex_count * 3);
+    return victim->data.data();
 }
 
 // ============================================================================
 //  UltraCompressedMesh
 // ============================================================================
 
-DecompressedChunk UltraCompressedMesh::decompress_chunk(uint32_t chunk_id)
+void UltraCompressedMesh::decompress_chunk(uint32_t chunk_id, uint32_t* out) const
 {
     const auto& chunk = vertex_chunks_[chunk_id];
-    DecompressedChunk out;
-    out.vertices.reserve(chunk.count * 3);
 
+#ifdef PYLMESH_USE_ZSTD
+    // Decompress zstd → varint buffer
+    size_t varint_size = ZSTD_getFrameContentSize(chunk.data.data(), chunk.data.size());
+    std::vector<uint8_t> varint_buf(varint_size);
+    ZSTD_decompress(varint_buf.data(), varint_size, chunk.data.data(), chunk.data.size());
+    const uint8_t* ptr = varint_buf.data();
+#else
     const uint8_t* ptr = chunk.data.data();
-    int32_t x = 0, y = 0, z = 0;
+#endif
 
+    int32_t x = 0, y = 0, z = 0;
     for (uint32_t i = 0; i < chunk.count; ++i)
     {
         x += zigzag_dec(varint_read(ptr));
         y += zigzag_dec(varint_read(ptr));
         z += zigzag_dec(varint_read(ptr));
-        out.vertices.push_back(uint32_t(x));
-        out.vertices.push_back(uint32_t(y));
-        out.vertices.push_back(uint32_t(z));
+        out[i * 3]     = uint32_t(x);
+        out[i * 3 + 1] = uint32_t(y);
+        out[i * 3 + 2] = uint32_t(z);
     }
-    return out;
 }
 
 Vertex UltraCompressedMesh::get_vertex(uint32_t i)
 {
-    // Remap from original index to Morton-sorted index
-    uint32_t sorted_i = remap_.empty() ? i : remap_[i];
+    uint32_t chunk_id = i / CHUNK_SIZE;
+    uint32_t local_id = i % CHUNK_SIZE;
+    uint32_t count = vertex_chunks_[chunk_id].count;
 
-    uint32_t chunk_id = sorted_i / CHUNK_SIZE;
-    uint32_t local_id = sorted_i % CHUNK_SIZE;
-
-    DecompressedChunk* chunk;
-    if (!cache_.get(chunk_id, chunk))
+    uint32_t* cached = cache_.get(chunk_id, count);
+    if (!cached)
     {
-        cache_.put(chunk_id, decompress_chunk(chunk_id));
-        cache_.get(chunk_id, chunk);
+        std::vector<uint32_t> tmp(count * 3);
+        decompress_chunk(chunk_id, tmp.data());
+        cached = cache_.put(chunk_id, count, tmp.data());
     }
 
-    const uint32_t* v = &chunk->vertices[local_id * 3];
     float x, y, z;
-    Q_.dequantize(v[0], v[1], v[2], x, y, z);
+    Q_.dequantize(cached[local_id * 3], cached[local_id * 3 + 1], cached[local_id * 3 + 2], x, y, z);
     return {x, y, z};
 }
 
@@ -169,10 +182,14 @@ double UltraCompressedMesh::surface_area()
     const uint32_t n = face_count();
     for (uint32_t i = 0; i < n; ++i)
     {
-        auto f = get_face(i);
-        Vertex v0 = get_vertex(f[0]);
-        Vertex v1 = get_vertex(f[1]);
-        Vertex v2 = get_vertex(f[2]);
+        const size_t base = size_t(i) * 3;
+        uint32_t i0 = static_cast<uint32_t>(indices_.get(base));
+        uint32_t i1 = static_cast<uint32_t>(indices_.get(base + 1));
+        uint32_t i2 = static_cast<uint32_t>(indices_.get(base + 2));
+
+        Vertex v0 = get_vertex(i0);
+        Vertex v1 = get_vertex(i1);
+        Vertex v2 = get_vertex(i2);
 
         double ax = v1.x - v0.x, ay = v1.y - v0.y, az = v1.z - v0.z;
         double bx = v2.x - v0.x, by = v2.y - v0.y, bz = v2.z - v0.z;
@@ -196,8 +213,10 @@ uint32_t UltraCompressedMeshBuilder::index_width(uint32_t n) noexcept
 
 UltraCompressedMeshBuilder::UltraCompressedMeshBuilder(
     Vertex min, Vertex max, int bits, bool dedup)
-    : bmin_(min), bmax_(max), bits_(bits), dedup_(dedup)
-{}
+    : dedup_(dedup)
+{
+    Q_.init(&min.x, &max.x, bits);
+}
 
 void UltraCompressedMeshBuilder::reserve(size_t vertex_count, size_t face_count)
 {
@@ -211,11 +230,8 @@ void UltraCompressedMeshBuilder::reserve(size_t vertex_count, size_t face_count)
 
 uint32_t UltraCompressedMeshBuilder::add_vertex(float x, float y, float z)
 {
-    Quantizer Q;
-    Q.init(&bmin_.x, &bmax_.x, bits_);
-
     uint32_t qx, qy, qz;
-    Q.quantize(x, y, z, qx, qy, qz);
+    Q_.quantize(x, y, z, qx, qy, qz);
 
     if (dedup_)
     {
@@ -244,14 +260,11 @@ UltraCompressedMesh UltraCompressedMeshBuilder::build() &&
     UltraCompressedMesh mesh;
     const size_t N = tmp_qx_.size();
     mesh.vertex_count_ = uint32_t(N);
+    mesh.Q_ = Q_;
 
-    // Init quantizer on the sealed mesh
-    mesh.Q_.init(&bmin_.x, &bmax_.x, bits_);
-
-    // Free dedup map
     dedup_map_.clear_and_free();
 
-    // Step 1: Morton-sort vertices and build remap table
+    // Step 1: Morton-sort + build remap
     struct SortEntry { uint64_t morton; uint32_t orig_idx; };
     std::vector<SortEntry> sorted(N);
     for (size_t i = 0; i < N; ++i)
@@ -262,17 +275,18 @@ UltraCompressedMesh UltraCompressedMeshBuilder::build() &&
     std::sort(sorted.begin(), sorted.end(),
               [](const SortEntry& a, const SortEntry& b) { return a.morton < b.morton; });
 
-    // remap_[original_index] = sorted_index
-    mesh.remap_.resize(N);
+    std::vector<uint32_t> remap(N);
     for (size_t i = 0; i < N; ++i)
-        mesh.remap_[sorted[i].orig_idx] = uint32_t(i);
+        remap[sorted[i].orig_idx] = uint32_t(i);
 
-    // Step 2: Delta-encode + varint-compress in chunks
+    // Step 2: Delta-encode + varint + zstd per chunk
     for (size_t i = 0; i < N; i += UltraCompressedMesh::CHUNK_SIZE)
     {
         size_t end = std::min(i + UltraCompressedMesh::CHUNK_SIZE, N);
-        std::vector<uint8_t> encoded;
-        encoded.reserve((end - i) * 6);
+
+        // Delta-varint encode
+        std::vector<uint8_t> varint_buf;
+        varint_buf.reserve((end - i) * 6);
 
         int32_t px = 0, py = 0, pz = 0;
         for (size_t j = i; j < end; ++j)
@@ -282,13 +296,25 @@ UltraCompressedMesh UltraCompressedMeshBuilder::build() &&
             int32_t y = int32_t(tmp_qy_[oi]);
             int32_t z = int32_t(tmp_qz_[oi]);
 
-            varint_write(zigzag_enc(x - px), encoded);
-            varint_write(zigzag_enc(y - py), encoded);
-            varint_write(zigzag_enc(z - pz), encoded);
-
+            varint_write(zigzag_enc(x - px), varint_buf);
+            varint_write(zigzag_enc(y - py), varint_buf);
+            varint_write(zigzag_enc(z - pz), varint_buf);
             px = x; py = y; pz = z;
         }
-        mesh.vertex_chunks_.push_back({std::move(encoded), uint32_t(end - i)});
+
+#ifdef PYLMESH_USE_ZSTD
+        // Zstd compress the varint buffer
+        size_t bound = ZSTD_compressBound(varint_buf.size());
+        std::vector<uint8_t> compressed(bound);
+        size_t csize = ZSTD_compress(compressed.data(), bound,
+                                     varint_buf.data(), varint_buf.size(), 3);
+        compressed.resize(csize);
+        compressed.shrink_to_fit();
+        mesh.vertex_chunks_.push_back({std::move(compressed), uint32_t(end - i)});
+#else
+        varint_buf.shrink_to_fit();
+        mesh.vertex_chunks_.push_back({std::move(varint_buf), uint32_t(end - i)});
+#endif
     }
 
     // Free temp vertex data
@@ -297,7 +323,12 @@ UltraCompressedMesh UltraCompressedMeshBuilder::build() &&
     { std::vector<uint32_t>{}.swap(tmp_qz_); }
     { std::vector<SortEntry>{}.swap(sorted); }
 
-    // Step 3: Pack face indices into BitPackedArray
+    // Step 3: Remap face indices
+    for (auto& idx : tmp_indices_)
+        idx = remap[idx];
+    { std::vector<uint32_t>{}.swap(remap); }
+
+    // Step 4: Pack face indices into BitPackedArray
     {
         const uint32_t iwidth = index_width(uint32_t(N));
         const size_t icount = tmp_indices_.size();

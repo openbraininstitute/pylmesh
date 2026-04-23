@@ -41,6 +41,7 @@ include(nlohmann_json)
 include(HDF5)
 include(TinyGLTF)
 include(Draco)
+include(Zstd)
 include(nanobind)
 
 # Build library
