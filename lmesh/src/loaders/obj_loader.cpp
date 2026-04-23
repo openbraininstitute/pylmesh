@@ -213,7 +213,7 @@ bool OBJLoader::load(const std::string& filepath, Mesh& mesh)
         skipLine(p);
     }
 
-    return !mesh.isEmpty();
+    return !mesh.is_empty();
 }
 
 bool OBJLoader::load(const std::string& filepath,
@@ -363,7 +363,7 @@ bool OBJLoader::load(const std::string& filepath,
     return out_mesh.vertex_count() > 0;
 }
 
-bool OBJLoader::load(const std::string& filepath, UltraCompressedMesh& out_mesh)
+bool OBJLoader::load(const std::string& filepath, UltraQuantizedMesh& out_mesh)
 {
     MappedFile file;
     if (!file.open(filepath))
@@ -409,7 +409,7 @@ bool OBJLoader::load(const std::string& filepath, UltraCompressedMesh& out_mesh)
     }
     if (vCount == 0) return false;
 
-    UltraCompressedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/false);
+    UltraQuantizedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/false);
     builder.reserve(vCount, vCount * 2);
 
     size_t vIdx = 0;

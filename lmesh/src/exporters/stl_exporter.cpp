@@ -19,7 +19,7 @@
 
 #include "lmesh/exporters/stl_exporter.h"
 #include "lmesh/quantized_mesh.h"
-#include "lmesh/ultra_compressed_mesh.h"
+#include "lmesh/ultra_quantized_mesh.h"
 #include <fstream>
 
 namespace pylmesh
@@ -38,10 +38,10 @@ bool STLExporter::save(const std::string& filepath, const Mesh& mesh)
 
     file << "solid mesh\n";
 
-    for (size_t fi = 0; fi < mesh.faceCount(); ++fi)
+    for (size_t fi = 0; fi < mesh.face_count(); ++fi)
     {
-        const uint32_t* idx = mesh.faceIndices(fi);
-        const uint32_t n = mesh.faceSize(fi);
+        const uint32_t* idx = mesh.face_indices(fi);
+        const uint32_t n = mesh.face_size(fi);
         if (n >= 3)
         {
             file << "  facet normal 0 0 0\n";
@@ -89,7 +89,7 @@ bool STLExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
     return true;
 }
 
-bool STLExporter::save(const std::string& filepath, UltraCompressedMesh& mesh)
+bool STLExporter::save(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
     std::ofstream file(filepath);
     if (!file.is_open()) return false;

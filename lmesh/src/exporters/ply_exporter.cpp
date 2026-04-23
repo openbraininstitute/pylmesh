@@ -19,7 +19,7 @@
 
 #include "lmesh/exporters/ply_exporter.h"
 #include "lmesh/quantized_mesh.h"
-#include "lmesh/ultra_compressed_mesh.h"
+#include "lmesh/ultra_quantized_mesh.h"
 #include <fstream>
 
 namespace pylmesh
@@ -42,7 +42,7 @@ bool PLYExporter::save(const std::string& filepath, const Mesh& mesh)
     file << "property float x\n";
     file << "property float y\n";
     file << "property float z\n";
-    file << "element face " << mesh.faceCount() << "\n";
+    file << "element face " << mesh.face_count() << "\n";
     file << "property list uchar int vertex_indices\n";
     file << "end_header\n";
 
@@ -51,10 +51,10 @@ bool PLYExporter::save(const std::string& filepath, const Mesh& mesh)
         file << v.x << " " << v.y << " " << v.z << "\n";
     }
 
-    for (size_t fi = 0; fi < mesh.faceCount(); ++fi)
+    for (size_t fi = 0; fi < mesh.face_count(); ++fi)
     {
-        const uint32_t* idx = mesh.faceIndices(fi);
-        const uint32_t n = mesh.faceSize(fi);
+        const uint32_t* idx = mesh.face_indices(fi);
+        const uint32_t n = mesh.face_size(fi);
         file << n;
         for (uint32_t i = 0; i < n; ++i)
         {
@@ -100,7 +100,7 @@ bool PLYExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
     return true;
 }
 
-bool PLYExporter::save(const std::string& filepath, UltraCompressedMesh& mesh)
+bool PLYExporter::save(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
     std::ofstream file(filepath);
     if (!file.is_open()) return false;

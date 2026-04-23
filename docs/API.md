@@ -184,8 +184,8 @@ for (const auto& face : mesh.faces) {
 }
 
 // Methods
-size_t vcount = mesh.vertexCount();
-size_t fcount = mesh.faceCount();
+size_t vcount = mesh.vertex_count();
+size_t fcount = mesh.face_count();
 bool empty = mesh.isEmpty();
 mesh.clear();
 ```

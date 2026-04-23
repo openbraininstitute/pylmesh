@@ -1,4 +1,4 @@
-#include "lmesh/ultra_compressed_mesh.h"
+#include "lmesh/ultra_quantized_mesh.h"
 
 #include <algorithm>
 #include <cmath>
@@ -222,25 +222,25 @@ const uint32_t* FlatLRUCache::put(uint32_t chunk_id, uint32_t count,
 }
 
 // ============================================================================
-//  UltraCompressedMesh
+//  UltraQuantizedMesh
 // ============================================================================
 
-UltraCompressedMesh::UltraCompressedMesh()
+UltraQuantizedMesh::UltraQuantizedMesh()
     : vcache_(CACHE_SLOTS, CHUNK_SIZE)
     , fcache_(CACHE_SLOTS, CHUNK_SIZE)
 {}
 
-void UltraCompressedMesh::decompress_vertex_chunk(uint32_t cid, uint32_t* out) const
+void UltraQuantizedMesh::decompress_vertex_chunk(uint32_t cid, uint32_t* out) const
 {
     decompress_columns(vertex_chunks_[cid], out, 3);
 }
 
-void UltraCompressedMesh::decompress_face_chunk(uint32_t cid, uint32_t* out) const
+void UltraQuantizedMesh::decompress_face_chunk(uint32_t cid, uint32_t* out) const
 {
     decompress_columns(face_chunks_[cid], out, 3);
 }
 
-const uint32_t* UltraCompressedMesh::vertex_chunk_data(uint32_t cid) const
+const uint32_t* UltraQuantizedMesh::vertex_chunk_data(uint32_t cid) const
 {
     if (const uint32_t* p = vcache_.get(cid)) return p;
     const uint32_t cnt = vertex_chunks_[cid].count;
@@ -249,7 +249,7 @@ const uint32_t* UltraCompressedMesh::vertex_chunk_data(uint32_t cid) const
     return vcache_.put(cid, cnt, tmp.data());
 }
 
-const uint32_t* UltraCompressedMesh::face_chunk_data(uint32_t cid) const
+const uint32_t* UltraQuantizedMesh::face_chunk_data(uint32_t cid) const
 {
     if (const uint32_t* p = fcache_.get(cid)) return p;
     const uint32_t cnt = face_chunks_[cid].count;
@@ -258,7 +258,7 @@ const uint32_t* UltraCompressedMesh::face_chunk_data(uint32_t cid) const
     return fcache_.put(cid, cnt, tmp.data());
 }
 
-Vertex UltraCompressedMesh::get_vertex(uint32_t i) const
+Vertex UltraQuantizedMesh::get_vertex(uint32_t i) const
 {
     const uint32_t cid   = i / CHUNK_SIZE;
     const uint32_t local = i % CHUNK_SIZE;
@@ -271,10 +271,10 @@ Vertex UltraCompressedMesh::get_vertex(uint32_t i) const
     return {x, y, z};
 }
 
-UltraCompressedMesh::Face UltraCompressedMesh::get_face(uint32_t i) const
+UltraQuantizedMesh::Face UltraQuantizedMesh::get_face(uint32_t i) const
 {
     if (i >= face_count_)
-        throw std::out_of_range("UltraCompressedMesh::get_face");
+        throw std::out_of_range("UltraQuantizedMesh::get_face");
 
     const uint32_t cid   = i / CHUNK_SIZE;
     const uint32_t local = i % CHUNK_SIZE;
@@ -285,27 +285,42 @@ UltraCompressedMesh::Face UltraCompressedMesh::get_face(uint32_t i) const
     return { data[local], data[cnt + local], data[2*cnt + local] };
 }
 
-size_t UltraCompressedMesh::vertex_bytes() const noexcept
+size_t UltraQuantizedMesh::vertex_bytes() const noexcept
 {
     size_t t = 0;
     for (const auto& c : vertex_chunks_) t += c.data.size();
     return t;
 }
 
-size_t UltraCompressedMesh::face_bytes() const noexcept
+size_t UltraQuantizedMesh::face_bytes() const noexcept
 {
     size_t t = 0;
     for (const auto& c : face_chunks_) t += c.data.size();
     return t;
 }
 
-size_t UltraCompressedMesh::cache_bytes() const noexcept
+size_t UltraQuantizedMesh::total_bytes() const noexcept
+{
+    return vertex_bytes() + face_bytes();
+}
+
+uint32_t UltraQuantizedMesh::vertex_count() const noexcept
+{
+    return vertex_count_;
+}
+
+uint32_t UltraQuantizedMesh::face_count() const noexcept
+{
+    return face_count_;
+}
+
+size_t UltraQuantizedMesh::cache_bytes() const noexcept
 {
     return uint64_t(CACHE_SLOTS) * CHUNK_SIZE * 3 * sizeof(uint32_t) * 2;
                                                                     // ×2: vcache+fcache
 }
 
-double UltraCompressedMesh::surface_area() const
+double UltraQuantizedMesh::surface_area() const
 {
     double area = 0.0;
     for (uint32_t i = 0; i < face_count_; ++i)
@@ -324,10 +339,10 @@ double UltraCompressedMesh::surface_area() const
 }
 
 // ============================================================================
-//  UltraCompressedMeshBuilder
+//  UltraQuantizedMeshBuilder
 // ============================================================================
 
-uint32_t UltraCompressedMeshBuilder::index_width(uint32_t n) noexcept
+uint32_t UltraQuantizedMeshBuilder::index_width(uint32_t n) noexcept
 {
     if (n <= 2) return 1;
     uint32_t bits = 0, v = n - 1;
@@ -335,14 +350,14 @@ uint32_t UltraCompressedMeshBuilder::index_width(uint32_t n) noexcept
     return bits;
 }
 
-UltraCompressedMeshBuilder::UltraCompressedMeshBuilder(
+UltraQuantizedMeshBuilder::UltraQuantizedMeshBuilder(
     Vertex min, Vertex max, int bits, bool dedup)
     : dedup_(dedup)
 {
     Q_.init(&min.x, &max.x, bits);
 }
 
-void UltraCompressedMeshBuilder::reserve(size_t vertex_count, size_t face_count)
+void UltraQuantizedMeshBuilder::reserve(size_t vertex_count, size_t face_count)
 {
     tmp_verts_.reserve(vertex_count);
     tmp_indices_.reserve(face_count * 3);
@@ -350,7 +365,7 @@ void UltraCompressedMeshBuilder::reserve(size_t vertex_count, size_t face_count)
         dedup_map_.reserve(vertex_count);
 }
 
-uint32_t UltraCompressedMeshBuilder::add_vertex(float x, float y, float z)
+uint32_t UltraQuantizedMeshBuilder::add_vertex(float x, float y, float z)
 {
     uint32_t qx, qy, qz;
     Q_.quantize(x, y, z, qx, qy, qz);
@@ -368,16 +383,16 @@ uint32_t UltraCompressedMeshBuilder::add_vertex(float x, float y, float z)
     return id;
 }
 
-void UltraCompressedMeshBuilder::add_face(uint32_t a, uint32_t b, uint32_t c)
+void UltraQuantizedMeshBuilder::add_face(uint32_t a, uint32_t b, uint32_t c)
 {
     tmp_indices_.push_back(a);
     tmp_indices_.push_back(b);
     tmp_indices_.push_back(c);
 }
 
-UltraCompressedMesh UltraCompressedMeshBuilder::build() &&
+UltraQuantizedMesh UltraQuantizedMeshBuilder::build() &&
 {
-    UltraCompressedMesh mesh;
+    UltraQuantizedMesh mesh;
     const uint32_t N = uint32_t(tmp_verts_.size());
     const uint32_t F = uint32_t(tmp_indices_.size() / 3);
     mesh.vertex_count_ = N;
@@ -442,7 +457,7 @@ UltraCompressedMesh UltraCompressedMeshBuilder::build() &&
     // Step 3: Pack vertices into column-oriented chunks and compress.
     // Column layout per chunk: [qx0..qxK | qy0..qyK | qz0..qzK]
     {
-        const uint32_t CS = UltraCompressedMesh::CHUNK_SIZE;
+        const uint32_t CS = UltraQuantizedMesh::CHUNK_SIZE;
         std::vector<uint32_t> col_buf;
         col_buf.reserve(uint64_t(CS) * 3);
 
@@ -560,7 +575,7 @@ UltraCompressedMesh UltraCompressedMeshBuilder::build() &&
     // Column layout: [a0..aK | b0..bK | c0..cK]
     // The a-column is monotone non-decreasing (sorted by a) → tiny deltas.
     {
-        const uint32_t CS = UltraCompressedMesh::CHUNK_SIZE;
+        const uint32_t CS = UltraQuantizedMesh::CHUNK_SIZE;
         std::vector<uint32_t> col_buf;
         col_buf.reserve(uint64_t(CS) * 3);
 

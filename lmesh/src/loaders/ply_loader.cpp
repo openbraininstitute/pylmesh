@@ -84,11 +84,11 @@ bool PLYLoader::load(const std::string& filepath, Mesh& mesh)
             {
                 file >> idx[j];
             }
-            mesh.addFace(idx.data(), idx.size());
+            mesh.add_face(idx.data(), idx.size());
         }
     }
 
-    return !mesh.isEmpty();
+    return !mesh.is_empty();
 }
 
 bool PLYLoader::load(const std::string& filepath, QuantizedMesh& mesh)
@@ -171,7 +171,7 @@ bool PLYLoader::load(const std::string& filepath, QuantizedMesh& mesh)
     return mesh.vertex_count() > 0;
 }
 
-bool PLYLoader::load(const std::string& filepath, UltraCompressedMesh& mesh)
+bool PLYLoader::load(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
     std::ifstream file(filepath);
     if (!file.is_open()) return false;
@@ -196,7 +196,7 @@ bool PLYLoader::load(const std::string& filepath, UltraCompressedMesh& mesh)
         std::getline(file, line);
     }
 
-    UltraCompressedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/false);
+    UltraQuantizedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/false);
     builder.reserve(vertexCount, faceCount);
     file.clear(); file.seekg(dataStart);
     for (int i = 0; i < vertexCount; ++i) {

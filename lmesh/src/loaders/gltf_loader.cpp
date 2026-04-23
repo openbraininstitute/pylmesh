@@ -128,7 +128,7 @@ bool GLTFLoader::load(const std::string& filepath, Mesh& mesh)
                                         static_cast<uint32_t>(vertexOffset + face[0].value()),
                                         static_cast<uint32_t>(vertexOffset + face[1].value()),
                                         static_cast<uint32_t>(vertexOffset + face[2].value())};
-                                    mesh.addFace(idx, 3);
+                                    mesh.add_face(idx, 3);
                                 }
 
                                 continue;
@@ -200,13 +200,13 @@ bool GLTFLoader::load(const std::string& filepath, Mesh& mesh)
                                 idx = data[i + j];
                             tri[j] = static_cast<uint32_t>(vertexOffset + idx);
                         }
-                        mesh.addFace(tri, 3);
+                        mesh.add_face(tri, 3);
                     }
                 }
             }
         }
 
-        return !mesh.isEmpty();
+        return !mesh.is_empty();
     }
     catch (...)
     {
@@ -425,7 +425,7 @@ bool GLTFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
 #endif
 }
 
-bool GLTFLoader::load(const std::string& filepath, UltraCompressedMesh& mesh)
+bool GLTFLoader::load(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
     // Load as Mesh first, then convert via builder
     Mesh raw;
@@ -440,13 +440,13 @@ bool GLTFLoader::load(const std::string& filepath, UltraCompressedMesh& mesh)
         if (v.z < bmin.z) bmin.z = v.z; if (v.z > bmax.z) bmax.z = v.z;
     }
 
-    UltraCompressedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/false);
-    builder.reserve(raw.vertices.size(), raw.faceCount());
+    UltraQuantizedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/false);
+    builder.reserve(raw.vertices.size(), raw.face_count());
     for (const auto& v : raw.vertices)
         builder.add_vertex(v.x, v.y, v.z);
-    for (size_t fi = 0; fi < raw.faceCount(); ++fi) {
-        const uint32_t* idx = raw.faceIndices(fi);
-        uint32_t n = raw.faceSize(fi);
+    for (size_t fi = 0; fi < raw.face_count(); ++fi) {
+        const uint32_t* idx = raw.face_indices(fi);
+        uint32_t n = raw.face_size(fi);
         for (uint32_t j = 1; j + 1 < n; ++j)
             builder.add_face(idx[0], idx[j], idx[j + 1]);
     }

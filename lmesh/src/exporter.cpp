@@ -72,7 +72,7 @@ bool MeshExporterFactory::saveMesh(const std::string& filepath, const QuantizedM
     return exporter->save(filepath, mesh);
 }
 
-bool MeshExporterFactory::saveMesh(const std::string& filepath, UltraCompressedMesh& mesh)
+bool MeshExporterFactory::saveMesh(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
     auto exporter = createExporter(filepath);
     if (!exporter)

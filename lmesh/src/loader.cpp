@@ -68,7 +68,7 @@ bool MeshLoaderFactory::loadMesh(const std::string& filepath, QuantizedMesh& mes
     return loader->load(filepath, mesh);
 }
 
-bool MeshLoaderFactory::loadMesh(const std::string& filepath, UltraCompressedMesh& mesh)
+bool MeshLoaderFactory::loadMesh(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
     auto loader = createLoader(filepath);
     if (!loader)

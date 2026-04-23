@@ -88,6 +88,31 @@ QuantizedMesh::Face QuantizedMesh::get_face(uint32_t i) const
     };
 }
 
+uint32_t QuantizedMesh::vertex_count() const noexcept
+{
+    return static_cast<uint32_t>(vdata_.count());
+}
+
+uint32_t QuantizedMesh::face_count() const noexcept
+{
+    return static_cast<uint32_t>(indices_.count() / 3);
+}
+
+size_t QuantizedMesh::vertex_bytes() const noexcept
+{
+    return vdata_.bytes_used();
+}
+
+size_t QuantizedMesh::face_bytes() const noexcept
+{
+    return indices_.bytes_used();
+}
+
+size_t QuantizedMesh::total_bytes() const noexcept
+{
+    return vertex_bytes() + face_bytes();
+}
+
 double QuantizedMesh::surface_area() const
 {
     double area = 0.0;

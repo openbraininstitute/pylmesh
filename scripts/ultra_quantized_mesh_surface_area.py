@@ -5,7 +5,7 @@ from time import time
 
 def benchmark_pylmesh(path):
     import pylmesh as pl
-    ucmesh = pl.load_ultra_compressed_mesh(path)
+    ucmesh = pl.load_ultra_quantized_mesh(path)
     return ucmesh
 
 def main():

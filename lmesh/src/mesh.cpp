@@ -36,34 +36,61 @@ void Mesh::clear()
     faceOffsets.clear();
 }
 
-bool Mesh::isEmpty() const
+bool Mesh::is_empty() const
 {
     return vertices.empty();
 }
 
-size_t Mesh::vertexCount() const
+
+uint32_t Mesh::vertex_count() const noexcept
 {
-    return vertices.size();
+    return static_cast<uint32_t>(vertices.size());
 }
 
-size_t Mesh::faceCount() const
+uint32_t Mesh::face_count() const noexcept
 {
-    return faceOffsets.empty() ? 0 : faceOffsets.size() - 1;
+    return static_cast<uint32_t>(faceOffsets.empty() ? 0 : faceOffsets.size() - 1);
 }
 
-uint32_t Mesh::faceSize(size_t f) const
+Vertex Mesh::get_vertex(uint32_t i) const
 {
-    assert(f < faceCount());
+    return vertices[i];
+}
+
+Mesh::Face Mesh::get_face(uint32_t i) const
+{
+    const uint32_t* idx = face_indices(i);
+    return {idx[0], idx[1], idx[2]};
+}
+
+size_t Mesh::vertex_bytes() const noexcept
+{
+    return vertices.size() * sizeof(Vertex);
+}
+
+size_t Mesh::face_bytes() const noexcept
+{
+    return indices.size() * sizeof(uint32_t) + faceOffsets.size() * sizeof(uint32_t);
+}
+
+size_t Mesh::total_bytes() const noexcept
+{
+    return vertex_bytes() + face_bytes();
+}
+
+uint32_t Mesh::face_size(size_t f) const
+{
+    assert(f < face_count());
     return faceOffsets[f + 1] - faceOffsets[f];
 }
 
-const uint32_t* Mesh::faceIndices(size_t f) const
+const uint32_t* Mesh::face_indices(size_t f) const
 {
-    assert(f < faceCount());
+    assert(f < face_count());
     return indices.data() + faceOffsets[f];
 }
 
-void Mesh::addFace(const uint32_t* idx, size_t count)
+void Mesh::add_face(const uint32_t* idx, size_t count)
 {
     if (faceOffsets.empty())
         faceOffsets.push_back(0);
@@ -71,12 +98,12 @@ void Mesh::addFace(const uint32_t* idx, size_t count)
     faceOffsets.push_back(static_cast<uint32_t>(indices.size()));
 }
 
-void Mesh::addFace(std::initializer_list<uint32_t> idx)
+void Mesh::add_face(std::initializer_list<uint32_t> idx)
 {
-    addFace(idx.begin(), idx.size());
+    add_face(idx.begin(), idx.size());
 }
 
-std::vector<float> Mesh::getVerticesArray() const
+std::vector<float> Mesh::get_vertices_array() const
 {
     std::vector<float> result;
     result.reserve(vertices.size() * 3);
@@ -89,22 +116,22 @@ std::vector<float> Mesh::getVerticesArray() const
     return result;
 }
 
-std::vector<unsigned int> Mesh::getFacesArray() const
+std::vector<unsigned int> Mesh::get_faces_array() const
 {
     return {indices.begin(), indices.end()};
 }
 
-double Mesh::surfaceArea() const
+double Mesh::surface_area() const
 {
-    const size_t nFaces = faceCount();
+    const size_t nFaces = face_count();
 
 #ifdef PYLMESH_USE_OPENMP
     double area = 0.0;
     #pragma omp parallel for reduction(+:area)
     for (size_t faceIdx = 0; faceIdx < nFaces; ++faceIdx)
     {
-        const uint32_t* idx = faceIndices(faceIdx);
-        const uint32_t n = faceSize(faceIdx);
+        const uint32_t* idx = face_indices(faceIdx);
+        const uint32_t n = face_size(faceIdx);
         if (n < 3)
             continue;
 

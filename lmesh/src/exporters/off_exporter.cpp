@@ -19,7 +19,7 @@
 
 #include "lmesh/exporters/off_exporter.h"
 #include "lmesh/quantized_mesh.h"
-#include "lmesh/ultra_compressed_mesh.h"
+#include "lmesh/ultra_quantized_mesh.h"
 #include <fstream>
 
 namespace pylmesh
@@ -37,17 +37,17 @@ bool OFFExporter::save(const std::string& filepath, const Mesh& mesh)
         return false;
 
     file << "OFF\n";
-    file << mesh.vertices.size() << " " << mesh.faceCount() << " 0\n";
+    file << mesh.vertices.size() << " " << mesh.face_count() << " 0\n";
 
     for (const auto& v : mesh.vertices)
     {
         file << v.x << " " << v.y << " " << v.z << "\n";
     }
 
-    for (size_t fi = 0; fi < mesh.faceCount(); ++fi)
+    for (size_t fi = 0; fi < mesh.face_count(); ++fi)
     {
-        const uint32_t* idx = mesh.faceIndices(fi);
-        const uint32_t n = mesh.faceSize(fi);
+        const uint32_t* idx = mesh.face_indices(fi);
+        const uint32_t n = mesh.face_size(fi);
         file << n;
         for (uint32_t i = 0; i < n; ++i)
         {
@@ -86,7 +86,7 @@ bool OFFExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
     return true;
 }
 
-bool OFFExporter::save(const std::string& filepath, UltraCompressedMesh& mesh)
+bool OFFExporter::save(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
     std::ofstream file(filepath);
     if (!file.is_open()) return false;

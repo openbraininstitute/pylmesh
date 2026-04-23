@@ -19,7 +19,7 @@
 
 #include "lmesh/exporters/obj_exporter.h"
 #include "lmesh/quantized_mesh.h"
-#include "lmesh/ultra_compressed_mesh.h"
+#include "lmesh/ultra_quantized_mesh.h"
 #include <fstream>
 
 namespace pylmesh
@@ -53,11 +53,11 @@ bool OBJExporter::save(const std::string& filepath, const Mesh& mesh)
         file << "vt " << t.u << " " << t.v << "\n";
     }
 
-    for (size_t fi = 0; fi < mesh.faceCount(); ++fi)
+    for (size_t fi = 0; fi < mesh.face_count(); ++fi)
     {
         file << "f";
-        const uint32_t* idx = mesh.faceIndices(fi);
-        const uint32_t n = mesh.faceSize(fi);
+        const uint32_t* idx = mesh.face_indices(fi);
+        const uint32_t n = mesh.face_size(fi);
         for (uint32_t i = 0; i < n; ++i)
         {
             file << " " << (idx[i] + 1);
@@ -94,7 +94,7 @@ bool OBJExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
     return true;
 }
 
-bool OBJExporter::save(const std::string& filepath, UltraCompressedMesh& mesh)
+bool OBJExporter::save(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
     std::ofstream file(filepath);
     if (!file.is_open()) return false;

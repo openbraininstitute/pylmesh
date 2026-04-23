@@ -57,10 +57,10 @@ bool STLLoader::load(const std::string& filepath, Mesh& mesh)
     for (size_t i = 0; i < mesh.vertices.size(); i += 3)
     {
         uint32_t idx[3] = {(uint32_t)i, (uint32_t)i + 1, (uint32_t)i + 2};
-        mesh.addFace(idx, 3);
+        mesh.add_face(idx, 3);
     }
 
-    return !mesh.isEmpty();
+    return !mesh.is_empty();
 }
 
 bool STLLoader::load(const std::string& filepath, QuantizedMesh& mesh)
@@ -127,7 +127,7 @@ bool STLLoader::load(const std::string& filepath, QuantizedMesh& mesh)
     return mesh.vertex_count() > 0;
 }
 
-bool STLLoader::load(const std::string& filepath, UltraCompressedMesh& mesh)
+bool STLLoader::load(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
     std::ifstream file(filepath);
     if (!file.is_open()) return false;
@@ -149,7 +149,7 @@ bool STLLoader::load(const std::string& filepath, UltraCompressedMesh& mesh)
     }
     if (vCount == 0) return false;
 
-    UltraCompressedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/true);
+    UltraQuantizedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/true);
     builder.reserve(vCount, vCount / 3);
 
     file.clear(); file.seekg(0);

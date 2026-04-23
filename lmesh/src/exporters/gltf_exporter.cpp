@@ -19,7 +19,7 @@
 
 #include "lmesh/exporters/gltf_exporter.h"
 #include "lmesh/quantized_mesh.h"
-#include "lmesh/ultra_compressed_mesh.h"
+#include "lmesh/ultra_quantized_mesh.h"
 #include <algorithm>
 #include <cstring>
 #include <limits>
@@ -248,7 +248,7 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh)
     // Create Draco mesh
     draco::Mesh dracoMesh;
     dracoMesh.set_num_points(mesh.vertices.size());
-    dracoMesh.SetNumFaces(mesh.faceCount());
+    dracoMesh.SetNumFaces(mesh.face_count());
 
     // Add position attribute
     draco::GeometryAttribute posAttr;
@@ -275,10 +275,10 @@ bool GLBExporter::save(const std::string& filepath, const Mesh& mesh)
     }
 
     // Set faces
-    for (size_t i = 0; i < mesh.faceCount(); ++i)
+    for (size_t i = 0; i < mesh.face_count(); ++i)
     {
-        const uint32_t* idx = mesh.faceIndices(i);
-        if (mesh.faceSize(i) >= 3)
+        const uint32_t* idx = mesh.face_indices(i);
+        if (mesh.face_size(i) >= 3)
         {
             draco::Mesh::Face face;
             face[0] = idx[0];
@@ -638,12 +638,12 @@ bool GLBExporter::save(const std::string& filepath, const QuantizedMesh& mesh)
 #endif
 }
 
-bool GLTFExporter::save(const std::string& filepath, UltraCompressedMesh& mesh)
+bool GLTFExporter::save(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
-    return false; // GLTF text export not supported for UltraCompressedMesh; use GLB
+    return false; // GLTF text export not supported for UltraQuantizedMesh; use GLB
 }
 
-bool GLBExporter::save(const std::string& filepath, UltraCompressedMesh& mesh)
+bool GLBExporter::save(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
     return false; // TODO: implement via dequantize path if needed
 }

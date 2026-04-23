@@ -62,10 +62,10 @@ bool OFFLoader::load(const std::string& filepath, Mesh& mesh)
         {
             file >> idx[j];
         }
-        mesh.addFace(idx.data(), idx.size());
+        mesh.add_face(idx.data(), idx.size());
     }
 
-    return !mesh.isEmpty();
+    return !mesh.is_empty();
 }
 
 bool OFFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
@@ -134,7 +134,7 @@ bool OFFLoader::load(const std::string& filepath, QuantizedMesh& mesh)
     return mesh.vertex_count() > 0;
 }
 
-bool OFFLoader::load(const std::string& filepath, UltraCompressedMesh& mesh)
+bool OFFLoader::load(const std::string& filepath, UltraQuantizedMesh& mesh)
 {
     std::ifstream file(filepath);
     if (!file.is_open()) return false;
@@ -153,7 +153,7 @@ bool OFFLoader::load(const std::string& filepath, UltraCompressedMesh& mesh)
         if (z < bmin.z) bmin.z = z; if (z > bmax.z) bmax.z = z;
     }
 
-    UltraCompressedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/false);
+    UltraQuantizedMeshBuilder builder(bmin, bmax, 16, /*dedup=*/false);
     builder.reserve(nVertices, nFaces);
     file.clear(); file.seekg(dataStart);
     for (int i = 0; i < nVertices; ++i) { float x, y, z; file >> x >> y >> z; builder.add_vertex(x, y, z); }

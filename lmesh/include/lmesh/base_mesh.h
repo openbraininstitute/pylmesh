@@ -18,27 +18,30 @@
  *****************************************************************************************/
 
 #pragma once
-#include "../exporter.h"
+
+#include <array>
+#include <cstdint>
+
+#include "vertex.h"
 
 namespace pylmesh
 {
 
-class GLTFExporter : public MeshExporter
+class BaseMesh
 {
   public:
-    bool save(const std::string& filepath, const Mesh& mesh) override;
-    bool save(const std::string& filepath, const QuantizedMesh& mesh) override;
-    bool save(const std::string& filepath, UltraQuantizedMesh& mesh) override;
-    bool canSave(const std::string& filepath) const override;
-};
+    using Face = std::array<uint32_t, 3>;
 
-class GLBExporter : public MeshExporter
-{
-  public:
-    bool save(const std::string& filepath, const Mesh& mesh) override;
-    bool save(const std::string& filepath, const QuantizedMesh& mesh) override;
-    bool save(const std::string& filepath, UltraQuantizedMesh& mesh) override;
-    bool canSave(const std::string& filepath) const override;
+    virtual ~BaseMesh() = default;
+
+    virtual Vertex   get_vertex(uint32_t i) const = 0;
+    virtual Face     get_face(uint32_t i)   const = 0;
+    virtual uint32_t vertex_count()         const noexcept = 0;
+    virtual uint32_t face_count()           const noexcept = 0;
+    virtual double   surface_area()         const = 0;
+    virtual size_t   vertex_bytes()         const noexcept = 0;
+    virtual size_t   face_bytes()           const noexcept = 0;
+    virtual size_t   total_bytes()          const noexcept = 0;
 };
 
 } // namespace pylmesh

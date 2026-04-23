@@ -24,13 +24,14 @@
 #include <string>
 #include <vector>
 
+#include "base_mesh.h"
 #include "normal.h"
 #include "tex_coord.h"
 #include "vertex.h"
 
 namespace pylmesh
 {
-class Mesh
+class Mesh : public BaseMesh
 {
   public:
     std::vector<Vertex> vertices;
@@ -46,30 +47,26 @@ class Mesh
     std::vector<uint32_t> faceOffsets;
 
     void clear();
-    bool isEmpty() const;
-    size_t vertexCount() const;
-    size_t faceCount() const;
+    bool is_empty() const;
 
-    // Number of indices for face f
-    uint32_t faceSize(size_t f) const;
+    // BaseMesh interface
+    Vertex   get_vertex(uint32_t i) const override;
+    Face     get_face(uint32_t i)   const override;
+    uint32_t vertex_count()         const noexcept override;
+    uint32_t face_count()           const noexcept override;
+    double   surface_area()         const override;
+    size_t   vertex_bytes()         const noexcept override;
+    size_t   face_bytes()           const noexcept override;
+    size_t   total_bytes()          const noexcept override;
 
-    // Pointer to the first index of face f
-    const uint32_t* faceIndices(size_t f) const;
+    uint32_t face_size(size_t f) const;
+    const uint32_t* face_indices(size_t f) const;
 
-    // Add a face from a pointer + count
-    void addFace(const uint32_t* idx, size_t count);
+    void add_face(const uint32_t* idx, size_t count);
+    void add_face(std::initializer_list<uint32_t> idx);
 
-    // Add a face from an initializer list
-    void addFace(std::initializer_list<uint32_t> idx);
-
-    // Get vertices as flat array [x1, y1, z1, x2, y2, z2, ...]
-    std::vector<float> getVerticesArray() const;
-
-    // Get faces as flat array [i1, i2, i3, i4, i5, i6, ...]
-    std::vector<unsigned int> getFacesArray() const;
-
-    // Compute total surface area
-    double surfaceArea() const;
+    std::vector<float> get_vertices_array() const;
+    std::vector<unsigned int> get_faces_array() const;
 };
 
 } // namespace pylmesh

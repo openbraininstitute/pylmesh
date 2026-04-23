@@ -12,7 +12,7 @@ def _make_vertex(x, y, z):
 
 
 def _make_unit_triangle_ucmesh(bits=16):
-    b = pylmesh.UltraCompressedMeshBuilder(
+    b = pylmesh.UltraQuantizedMeshBuilder(
         _make_vertex(0, 0, 0), _make_vertex(1, 1, 0), bits=bits
     )
     s0 = b.add_vertex(0.0, 0.0, 0.0)
@@ -26,14 +26,14 @@ def _make_unit_triangle_ucmesh(bits=16):
 
 
 def test_builder_basic():
-    b = pylmesh.UltraCompressedMeshBuilder(
+    b = pylmesh.UltraQuantizedMeshBuilder(
         _make_vertex(0, 0, 0), _make_vertex(1, 1, 1)
     )
     assert b.vertex_count() == 0
 
 
 def test_builder_add_and_build():
-    b = pylmesh.UltraCompressedMeshBuilder(
+    b = pylmesh.UltraQuantizedMeshBuilder(
         _make_vertex(0, 0, 0), _make_vertex(10, 10, 10), bits=16
     )
     b.add_vertex(5.0, 5.0, 5.0)
@@ -48,7 +48,7 @@ def test_builder_add_and_build():
 
 
 def test_builder_dedup():
-    b = pylmesh.UltraCompressedMeshBuilder(
+    b = pylmesh.UltraQuantizedMeshBuilder(
         _make_vertex(0, 0, 0), _make_vertex(1, 1, 1),
         bits=10, dedup=True
     )
@@ -61,7 +61,7 @@ def test_builder_dedup():
 
 
 def test_builder_no_dedup():
-    b = pylmesh.UltraCompressedMeshBuilder(
+    b = pylmesh.UltraQuantizedMeshBuilder(
         _make_vertex(0, 0, 0), _make_vertex(1, 1, 1),
         bits=10, dedup=False
     )
@@ -90,7 +90,7 @@ def test_get_face_out_of_range():
 
 
 def test_multiple_faces():
-    b = pylmesh.UltraCompressedMeshBuilder(
+    b = pylmesh.UltraQuantizedMeshBuilder(
         _make_vertex(0, 0, 0), _make_vertex(1, 1, 0), bits=12
     )
     s0 = b.add_vertex(0.0, 0.0, 0.0)
@@ -134,7 +134,7 @@ def test_surface_area_unit_triangle():
 
 
 def test_surface_area_unit_square():
-    b = pylmesh.UltraCompressedMeshBuilder(
+    b = pylmesh.UltraQuantizedMeshBuilder(
         _make_vertex(0, 0, 0), _make_vertex(1, 1, 0), bits=16
     )
     s0 = b.add_vertex(0.0, 0.0, 0.0)
@@ -160,7 +160,7 @@ def test_memory_bytes():
 
 def test_compressed_smaller_than_raw():
     """Vertex storage should be smaller than raw 12 bytes/vertex."""
-    b = pylmesh.UltraCompressedMeshBuilder(
+    b = pylmesh.UltraQuantizedMeshBuilder(
         _make_vertex(0, 0, 0), _make_vertex(100, 100, 100), bits=16
     )
     for i in range(1000):
@@ -194,10 +194,10 @@ def test_save_load_roundtrip(ext):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         filepath = os.path.join(tmpdir, f"test{ext}")
-        pylmesh.save_ultra_compressed_mesh(filepath, ucm)
+        pylmesh.save_ultra_quantized_mesh(filepath, ucm)
         assert os.path.exists(filepath)
 
-        loaded = pylmesh.load_ultra_compressed_mesh(filepath)
+        loaded = pylmesh.load_ultra_quantized_mesh(filepath)
         assert loaded.vertex_count() >= 3
         assert loaded.face_count() >= 1
 
@@ -209,8 +209,8 @@ def test_roundtrip_surface_area(ext):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         filepath = os.path.join(tmpdir, f"test{ext}")
-        pylmesh.save_ultra_compressed_mesh(filepath, ucm)
-        loaded = pylmesh.load_ultra_compressed_mesh(filepath)
+        pylmesh.save_ultra_quantized_mesh(filepath, ucm)
+        loaded = pylmesh.load_ultra_quantized_mesh(filepath)
 
         assert abs(loaded.surface_area() - original_area) < 0.05
 
@@ -226,7 +226,7 @@ TEST_DATA = os.path.join(os.path.dirname(__file__), "test_data")
     reason="test_data not available",
 )
 def test_load_obj_from_test_data():
-    ucm = pylmesh.load_ultra_compressed_mesh(os.path.join(TEST_DATA, "test.obj"))
+    ucm = pylmesh.load_ultra_quantized_mesh(os.path.join(TEST_DATA, "test.obj"))
     assert ucm.vertex_count() > 0
     assert ucm.face_count() > 0
     assert ucm.surface_area() > 0.0
@@ -241,7 +241,7 @@ def test_load_obj_from_test_data():
 )
 def test_surface_area_matches_mesh():
     mesh = pylmesh.load_mesh(os.path.join(TEST_DATA, "test.obj"))
-    ucm = pylmesh.load_ultra_compressed_mesh(os.path.join(TEST_DATA, "test.obj"))
+    ucm = pylmesh.load_ultra_quantized_mesh(os.path.join(TEST_DATA, "test.obj"))
 
     mesh_area = mesh.surface_area()
     ucm_area = ucm.surface_area()

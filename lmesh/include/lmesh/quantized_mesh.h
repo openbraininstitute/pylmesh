@@ -35,6 +35,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "lmesh/base_mesh.h"
 #include "lmesh/bit_packed_array.h"
 #include "lmesh/flat_hash_map.h"
 #include "vertex.h"
@@ -64,24 +65,24 @@ struct AxisBits
 // ============================================================================
 //  QuantizedMesh — sealed, read-only storage
 // ============================================================================
-class QuantizedMesh
+class QuantizedMesh : public BaseMesh
 {
   public:
     using Face = std::array<uint32_t, 3>;
 
     QuantizedMesh() = default;
 
-    [[nodiscard]] Vertex get_vertex(uint32_t i) const;
-    [[nodiscard]] Face get_face(uint32_t i) const;
+    // BaseMesh interface
+    Vertex   get_vertex(uint32_t i) const override;
+    Face     get_face(uint32_t i)   const override;
+    uint32_t vertex_count()         const noexcept override;
+    uint32_t face_count()           const noexcept override;
+    double   surface_area()         const override;
+    size_t   vertex_bytes()         const noexcept override;
+    size_t   face_bytes()           const noexcept override;
+    size_t   total_bytes()          const noexcept override;
 
-    uint32_t vertex_count() const noexcept
-    {
-        return static_cast<uint32_t>(vdata_.count());
-    }
-    uint32_t face_count() const noexcept
-    {
-        return static_cast<uint32_t>(indices_.count() / 3);
-    }
+    // QuantizedMesh-specific
     AxisBits bits_per_axis() const noexcept
     {
         return {bits_[0], bits_[1], bits_[2]};
@@ -90,21 +91,6 @@ class QuantizedMesh
     {
         return bits_[0] + bits_[1] + bits_[2];
     }
-
-    size_t vertex_bytes() const noexcept
-    {
-        return vdata_.bytes_used();
-    }
-    size_t face_bytes() const noexcept
-    {
-        return indices_.bytes_used();
-    }
-    size_t total_bytes() const noexcept
-    {
-        return vertex_bytes() + face_bytes();
-    }
-
-    [[nodiscard]] double surface_area() const;
 
   private:
     friend class QuantizedMeshBuilder;

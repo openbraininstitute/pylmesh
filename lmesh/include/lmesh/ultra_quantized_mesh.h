@@ -1,7 +1,7 @@
 #pragma once
 
 // ============================================================================
-//  UltraCompressedMesh + UltraCompressedMeshBuilder
+//  UltraQuantizedMesh + UltraQuantizedMeshBuilder
 //
 //  Design priorities: minimum sealed memory, O(chunk) access acceptable.
 //
@@ -29,17 +29,18 @@
 //    CHUNK_SIZE = 32768 is the sweet spot for memory-first use.
 //
 //  Lifecycle:
-//    UltraCompressedMeshBuilder b(bmin, bmax, /*bits=*/16, /*dedup=*/true);
+//    UltraQuantizedMeshBuilder b(bmin, bmax, /*bits=*/16, /*dedup=*/true);
 //    b.reserve(N, F);
 //    for (...) b.add_vertex(x, y, z);
 //    for (...) b.add_face(a, b, c);
-//    UltraCompressedMesh mesh = std::move(b).build();
+//    UltraQuantizedMesh mesh = std::move(b).build();
 // ============================================================================
 
 #include <array>
 #include <cstdint>
 #include <vector>
 
+#include "lmesh/base_mesh.h"
 #include "lmesh/flat_hash_map.h"
 #include "lmesh/vertex.h"
 
@@ -105,39 +106,34 @@ class FlatLRUCache
 };
 
 // ============================================================================
-//  UltraCompressedMesh — sealed, read-only
+//  UltraQuantizedMesh — sealed, read-only
 // ============================================================================
 
-class UltraCompressedMesh
+class UltraQuantizedMesh : public BaseMesh
 {
   public:
-    // Tune CHUNK_SIZE up for better compression, down for cheaper cache misses.
     static constexpr uint32_t CHUNK_SIZE   = 32768;
-    // Tune CACHE_SLOTS up for better hit rate, down to reduce memory.
     static constexpr uint32_t CACHE_SLOTS  = 64;
 
     using Face = std::array<uint32_t, 3>;
 
-    UltraCompressedMesh();
+    UltraQuantizedMesh();
 
-    [[nodiscard]] Vertex get_vertex(uint32_t i)  const;
-    [[nodiscard]] Face   get_face(uint32_t i)    const;
+    // BaseMesh interface
+    Vertex   get_vertex(uint32_t i) const override;
+    Face     get_face(uint32_t i)   const override;
+    uint32_t vertex_count()         const noexcept override;
+    uint32_t face_count()           const noexcept override;
+    double   surface_area()         const override;
+    size_t   vertex_bytes()         const noexcept override;
+    size_t   face_bytes()           const noexcept override;
+    size_t   total_bytes()          const noexcept override;
 
-    uint32_t vertex_count() const noexcept { return vertex_count_; }
-    uint32_t face_count()   const noexcept { return face_count_; }
-
-    // Bytes of compressed storage only (not the LRU cache working set).
-    size_t vertex_bytes()   const noexcept;
-    size_t face_bytes()     const noexcept;
-    size_t total_bytes()    const noexcept { return vertex_bytes() + face_bytes(); }
-
-    // Cache working-set size (decompressed slots, live in RAM alongside mesh).
-    size_t cache_bytes()    const noexcept;
-
-    [[nodiscard]] double surface_area() const;
+    // UltraQuantizedMesh-specific
+    size_t cache_bytes() const noexcept;
 
   private:
-    friend class UltraCompressedMeshBuilder;
+    friend class UltraQuantizedMeshBuilder;
 
     // Decompress chunk into column-oriented output:
     //   out[0..count)        = qx values
@@ -165,13 +161,13 @@ class UltraCompressedMesh
 };
 
 // ============================================================================
-//  UltraCompressedMeshBuilder
+//  UltraQuantizedMeshBuilder
 // ============================================================================
 
-class UltraCompressedMeshBuilder
+class UltraQuantizedMeshBuilder
 {
   public:
-    explicit UltraCompressedMeshBuilder(Vertex min, Vertex max,
+    explicit UltraQuantizedMeshBuilder(Vertex min, Vertex max,
                                         int  bits  = 21,
                                         bool dedup = true);
 
@@ -184,7 +180,7 @@ class UltraCompressedMeshBuilder
         return static_cast<uint32_t>(tmp_verts_.size());
     }
 
-    [[nodiscard]] UltraCompressedMesh build() &&;
+    [[nodiscard]] UltraQuantizedMesh build() &&;
 
   private:
     Quantizer Q_;
