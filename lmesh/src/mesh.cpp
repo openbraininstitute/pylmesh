@@ -146,4 +146,19 @@ double Mesh::surfaceArea() const
     return area;
 }
 
+void Mesh::scale(float x, float y, float z)
+{
+    for (auto& v : vertices)
+    {
+        v.x *= x;
+        v.y *= y;
+        v.z *= z;
+    }
+}
+
+void Mesh::scale(float factor)
+{
+    scale(factor, factor, factor);
+}
+
 } // namespace pylmesh

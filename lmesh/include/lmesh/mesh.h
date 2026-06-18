@@ -65,6 +65,10 @@ class Mesh
 
     // Compute total surface area
     double surfaceArea() const;
+
+    // Scaling functions 
+    void scale(float x, float y, float z);
+    void scale (float factor);
 };
 
 } // namespace pylmesh
