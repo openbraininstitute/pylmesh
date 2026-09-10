@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/pylmesh-logo.jpeg" alt="pylmesh logo" width="800"/>
+  <img src="https://raw.githubusercontent.com/openbraininstitute/pylmesh/master/docs/images/pylmesh-logo.jpeg" alt="pylmesh logo" width="800"/>
 </p>
 
 # pylmesh
