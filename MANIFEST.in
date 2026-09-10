@@ -1,6 +1,5 @@
 include README.md
 include LICENSE
-include pylmesh.version
 recursive-include lmesh/include *.h
 recursive-include lmesh/src *.cpp
 recursive-include python *.cpp *.py
