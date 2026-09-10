@@ -67,8 +67,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/openbraininstitue/pylmesh"
-Repository = "https://github.com/openbraininstitue/pylmesh"
+Homepage = "https://github.com/openbraininstitute/pylmesh"
+Repository = "https://github.com/openbraininstitute/pylmesh"
 
 [tool.scikit-build]
 cmake.source-dir = "."
