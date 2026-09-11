@@ -43,15 +43,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Download Linux wheels
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cibw-wheels-linux-cp${{ matrix.python-version == '3.11' && '311' || matrix.python-version == '3.12' && '312' || '313' }}
           path: dist/
@@ -81,14 +81,14 @@ jobs:
       # 1. Checkout
       # ------------------------------------------------------------------ #
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # ------------------------------------------------------------------ #
       # 2. Build wheels (cibuildwheel)
       #    Runs inside a manylinux_2_28 container (Fedora/RHEL-based).
       # ------------------------------------------------------------------ #
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.23.3
+        uses: pypa/cibuildwheel@v4.2.1
         env:
           CIBW_BUILD: "cp${{ matrix.python-version == '3.11' && '311' || matrix.python-version == '3.12' && '312' || '313' }}-manylinux_x86_64"
           CIBW_SKIP: "*musllinux*"
@@ -137,7 +137,7 @@ jobs:
       # 3. Upload wheels artifact
       # ------------------------------------------------------------------ #
       - name: Upload wheels artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cibw-wheels-linux-cp${{ matrix.python-version == '3.11' && '311' || matrix.python-version == '3.12' && '312' || '313' }}
           path: wheelhouse/*.whl
@@ -158,13 +158,13 @@ jobs:
       # 1. Checkout (needed to build the sdist)
       # ------------------------------------------------------------------ #
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # ------------------------------------------------------------------ #
       # 2. Set up Python
       # ------------------------------------------------------------------ #
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -178,7 +178,7 @@ jobs:
       # 4. Download wheels built by Linux job
       # ------------------------------------------------------------------ #
       - name: Download Linux wheels
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: cibw-wheels-linux-*
           path: dist/
@@ -201,7 +201,7 @@ jobs:
       # 7. Create GitHub Release and attach all dist artifacts
       # ------------------------------------------------------------------ #
       - name: Upload release assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/*
           tag_name: ${{ github.ref_name }}
