@@ -8,7 +8,7 @@ pip install .
 
 Or install from wheel:
 ```bash
-pip install dist/pylmesh-1.0.0-cp312-cp312-linux_x86_64.whl
+pip install dist/pylmesh-*-cp312-cp312-linux_x86_64.whl
 ```
 
 ## Usage
