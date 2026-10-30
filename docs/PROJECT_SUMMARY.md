@@ -93,7 +93,7 @@ cmake -DENABLE_GLTF=OFF ..
 ### Requirements
 - CMake >= 3.15
 - C++17 compiler
-- Python >= 3.8 (for Python bindings)
+- Python >= 3.12 (for Python bindings)
 - pybind11 (for Python bindings)
 
 ## Testing
